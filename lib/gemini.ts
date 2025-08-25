@@ -121,10 +121,17 @@ Ensure the JSON is valid and complete.`;
     console.log("Gemini response received, length:", text.length);
     console.log("Gemini response preview:", text.substring(0, 200));
 
+    // Clean up markdown formatting from Gemini response
+    const cleanedText = text
+      .replace(/\*\*(.*?)\*\*/g, "$1") // Remove ** bold formatting
+      .replace(/\*(.*?)\*/g, "$1") // Remove * italic formatting
+      .replace(/#{1,6}\s/g, "") // Remove # headers
+      .trim();
+
     // Extract JSON from response (in case there's additional text)
-    const jsonMatch = text.match(/\{[\s\S]*\}/);
+    const jsonMatch = cleanedText.match(/\{[\s\S]*\}/);
     if (!jsonMatch) {
-      console.error("No JSON found in response:", text);
+      console.error("No JSON found in response:", cleanedText);
       throw new Error("No valid JSON found in response");
     }
 
@@ -185,8 +192,15 @@ Please provide a helpful, clear response. If this is document-specific, referenc
     console.log("Chat response received");
     const responseText = response.text();
 
+    // Clean up markdown formatting from Gemini response
+    const cleanedResponse = responseText
+      .replace(/\*\*(.*?)\*\*/g, "$1") // Remove ** bold formatting
+      .replace(/\*(.*?)\*/g, "$1") // Remove * italic formatting
+      .replace(/#{1,6}\s/g, "") // Remove # headers
+      .trim();
+
     return {
-      response: responseText,
+      response: cleanedResponse,
       context,
     };
   } catch (error) {
