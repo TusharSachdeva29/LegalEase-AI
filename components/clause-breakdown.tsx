@@ -1,11 +1,13 @@
-"use client"
+"use client";
 
-import { Card } from "@/components/ui/card"
-import { Badge } from "@/components/ui/badge"
-import { AlertTriangle, Info, CheckCircle, Lightbulb } from "lucide-react"
+import { Card } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { AlertTriangle, Info, CheckCircle, Lightbulb } from "lucide-react";
+import type { DocumentAnalysis } from "@/lib/gemini";
 
 interface ClauseBreakdownProps {
-  selectedFilter: string
+  selectedFilter: string;
+  analysis?: DocumentAnalysis | null;
 }
 
 const mockClauses = [
@@ -153,99 +155,139 @@ const mockClauses = [
     riskLevel: "low",
     category: "Contract Modifications",
   },
-]
+];
 
-export function ClauseBreakdown({ selectedFilter }: ClauseBreakdownProps) {
-  const filteredClauses = mockClauses.filter((clause) => {
-    if (selectedFilter === "all") return true
-    return clause.riskLevel === selectedFilter
-  })
+export function ClauseBreakdown({
+  selectedFilter,
+  analysis,
+}: ClauseBreakdownProps) {
+  // Use analysis clauses if available, otherwise show empty state
+  const allClauses = analysis?.clauses || [];
+
+  const filteredClauses = allClauses.filter((clause) => {
+    if (selectedFilter === "all") return true;
+    return clause.riskLevel === selectedFilter;
+  });
 
   const getRiskColor = (riskLevel: string) => {
     switch (riskLevel) {
       case "high":
-        return "bg-red-50 border-red-200"
+        return "bg-red-50 border-red-200";
       case "medium":
-        return "bg-yellow-50 border-yellow-200"
+        return "bg-yellow-50 border-yellow-200";
       case "low":
-        return "bg-green-50 border-green-200"
+        return "bg-green-50 border-green-200";
       default:
-        return "bg-muted border-border"
+        return "bg-muted border-border";
     }
-  }
+  };
 
   const getRiskIcon = (riskLevel: string) => {
     switch (riskLevel) {
       case "high":
-        return <AlertTriangle className="h-5 w-5 text-destructive" />
+        return <AlertTriangle className="h-5 w-5 text-destructive" />;
       case "medium":
-        return <Info className="h-5 w-5 text-yellow-600" />
+        return <Info className="h-5 w-5 text-yellow-600" />;
       case "low":
-        return <CheckCircle className="h-5 w-5 text-secondary" />
+        return <CheckCircle className="h-5 w-5 text-secondary" />;
       default:
-        return null
+        return null;
     }
-  }
+  };
 
   const getRiskBadgeVariant = (riskLevel: string) => {
     switch (riskLevel) {
       case "high":
-        return "destructive"
+        return "destructive";
       case "medium":
-        return "secondary"
+        return "secondary";
       case "low":
-        return "secondary"
+        return "secondary";
       default:
-        return "outline"
+        return "outline";
     }
-  }
+  };
 
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-      {filteredClauses.map((clause) => (
-        <Card key={clause.id} className={`p-6 ${getRiskColor(clause.riskLevel)}`}>
-          {/* Clause Header */}
-          <div className="flex items-start justify-between mb-4">
-            <div>
-              <h3 className="text-lg font-semibold text-foreground mb-1">{clause.title}</h3>
-              <Badge variant="outline" className="text-xs">
-                {clause.category}
-              </Badge>
-            </div>
-            <div className="flex items-center space-x-2">
-              {getRiskIcon(clause.riskLevel)}
-              <Badge variant={getRiskBadgeVariant(clause.riskLevel)} className="text-xs">
-                {clause.riskLevel} risk
-              </Badge>
-            </div>
-          </div>
-
-          {/* Original Clause */}
-          <div className="mb-4">
-            <h4 className="text-sm font-medium text-foreground mb-2">Original Clause:</h4>
-            <div className="p-3 bg-muted rounded border text-sm text-muted-foreground leading-relaxed">
-              "{clause.originalText}"
-            </div>
-          </div>
-
-          {/* Simplified Explanation */}
-          <div className="mb-4">
-            <h4 className="text-sm font-medium text-foreground mb-2">Simplified Explanation:</h4>
-            <p className="text-sm text-foreground leading-relaxed">{clause.simplifiedExplanation}</p>
-          </div>
-
-          {/* What This Means */}
-          <div className="p-4 bg-secondary/10 rounded-lg border-l-4 border-secondary">
-            <div className="flex items-start space-x-2">
-              <Lightbulb className="h-4 w-4 text-secondary mt-0.5 flex-shrink-0" />
-              <div>
-                <h4 className="text-sm font-medium text-foreground mb-1">What this means for you:</h4>
-                <p className="text-sm text-foreground leading-relaxed">{clause.whatThisMeans}</p>
+    <div>
+      {filteredClauses.length > 0 ? (
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          {filteredClauses.map((clause) => (
+            <Card
+              key={clause.id}
+              className={`p-6 ${getRiskColor(clause.riskLevel)}`}
+            >
+              {/* Clause Header */}
+              <div className="flex items-start justify-between mb-4">
+                <div>
+                  <h3 className="text-lg font-semibold text-foreground mb-1">
+                    {clause.title}
+                  </h3>
+                  <Badge variant="outline" className="text-xs">
+                    {clause.category}
+                  </Badge>
+                </div>
+                <div className="flex items-center space-x-2">
+                  {getRiskIcon(clause.riskLevel)}
+                  <Badge
+                    variant={getRiskBadgeVariant(clause.riskLevel)}
+                    className="text-xs"
+                  >
+                    {clause.riskLevel} risk
+                  </Badge>
+                </div>
               </div>
-            </div>
-          </div>
-        </Card>
-      ))}
+
+              {/* Original Clause */}
+              <div className="mb-4">
+                <h4 className="text-sm font-medium text-foreground mb-2">
+                  Original Clause:
+                </h4>
+                <div className="p-3 bg-muted rounded border text-sm text-muted-foreground leading-relaxed">
+                  "{clause.originalText}"
+                </div>
+              </div>
+
+              {/* Simplified Explanation */}
+              <div className="mb-4">
+                <h4 className="text-sm font-medium text-foreground mb-2">
+                  Simplified Explanation:
+                </h4>
+                <p className="text-sm text-foreground leading-relaxed">
+                  {clause.simplifiedExplanation}
+                </p>
+              </div>
+
+              {/* What This Means */}
+              <div className="p-4 bg-secondary/10 rounded-lg border-l-4 border-secondary">
+                <div className="flex items-start space-x-2">
+                  <Lightbulb className="h-4 w-4 text-secondary mt-0.5 flex-shrink-0" />
+                  <div>
+                    <h4 className="text-sm font-medium text-foreground mb-1">
+                      What this means for you:
+                    </h4>
+                    <p className="text-sm text-foreground leading-relaxed">
+                      {clause.whatThisMeans}
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </Card>
+          ))}
+        </div>
+      ) : analysis ? (
+        <div className="text-center py-12">
+          <p className="text-muted-foreground">
+            No clauses match the selected filter.
+          </p>
+        </div>
+      ) : (
+        <div className="text-center py-12">
+          <p className="text-muted-foreground">
+            Upload a document to see AI-powered clause breakdown.
+          </p>
+        </div>
+      )}
     </div>
-  )
+  );
 }
