@@ -1,0 +1,82 @@
+"use client"
+
+import { useState } from "react"
+import { Navbar } from "@/components/navbar"
+import { Footer } from "@/components/footer"
+import { DocumentViewer } from "@/components/document-viewer"
+import { AiInsights } from "@/components/ai-insights"
+import { ChatInterface } from "@/components/chat-interface"
+import { Button } from "@/components/ui/button"
+import { ArrowLeft, Download, Share2, Save } from "lucide-react"
+import Link from "next/link"
+import { ExportSection } from "@/components/export-section"
+
+export default function DashboardPage() {
+  const [selectedClause, setSelectedClause] = useState<number | null>(null)
+
+  return (
+    <div className="min-h-screen bg-background">
+      <Navbar />
+
+      <main className="py-6 px-4 sm:px-6 lg:px-8">
+        <div className="max-w-7xl mx-auto">
+          {/* Header */}
+          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6">
+            <div>
+              <Link
+                href="/upload"
+                className="inline-flex items-center text-muted-foreground hover:text-primary transition-colors mb-2"
+              >
+                <ArrowLeft className="h-4 w-4 mr-2" />
+                Back to Upload
+              </Link>
+              <h1 className="text-2xl sm:text-3xl font-serif font-bold text-foreground">Document Analysis</h1>
+              <p className="text-muted-foreground mt-1">Service Agreement - Contract.pdf</p>
+            </div>
+
+            {/* Action Buttons */}
+            <div className="flex flex-wrap gap-2 mt-4 sm:mt-0">
+              <Button variant="outline" size="sm">
+                <Save className="h-4 w-4 mr-2" />
+                Save to Account
+              </Button>
+              <Button variant="outline" size="sm">
+                <Share2 className="h-4 w-4 mr-2" />
+                Share
+              </Button>
+              <Button className="bg-secondary hover:bg-secondary/90" size="sm">
+                <Download className="h-4 w-4 mr-2" />
+                Download PDF
+              </Button>
+            </div>
+          </div>
+
+          {/* Main Content - Split Layout */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            {/* Left Panel - Document Viewer */}
+            <div className="order-2 lg:order-1">
+              <DocumentViewer selectedClause={selectedClause} onClauseSelect={setSelectedClause} />
+            </div>
+
+            {/* Right Panel - AI Insights */}
+            <div className="order-1 lg:order-2">
+              <AiInsights selectedClause={selectedClause} />
+            </div>
+          </div>
+
+          <div className="mt-8">
+            <h2 className="text-xl font-semibold text-foreground mb-4">Ask Questions About This Document</h2>
+            <ChatInterface documentContext={true} documentName="Service Agreement - Contract.pdf" />
+          </div>
+
+          {/* Bottom Action Bar */}
+          <div className="mt-8">
+            <ExportSection documentTitle="Service Agreement Analysis" />
+          </div>
+        </div>
+      </main>
+
+      <Footer />
+    </div>
+  )
+}
