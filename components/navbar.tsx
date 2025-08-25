@@ -1,6 +1,8 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
+import { getAuth, signInWithPopup, GoogleAuthProvider, signOut, onAuthStateChanged, User } from "firebase/auth"
+import firebaseApp from "@/lib/firebase"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Menu, X, FileText, BarChart3, Upload, MessageCircle } from "lucide-react"
@@ -9,7 +11,36 @@ import { usePathname } from "next/navigation"
 
 export function Navbar() {
   const [isMenuOpen, setIsMenuOpen] = useState(false)
+  const [user, setUser] = useState<User | null>(null)
   const pathname = usePathname()
+
+  // Firebase Auth
+  useEffect(() => {
+    const auth = getAuth(firebaseApp)
+    const unsubscribe = onAuthStateChanged(auth, (user) => {
+      setUser(user)
+    })
+    return () => unsubscribe()
+  }, [])
+
+  const handleSignIn = async () => {
+    const auth = getAuth(firebaseApp)
+    const provider = new GoogleAuthProvider()
+    try {
+      await signInWithPopup(auth, provider)
+    } catch (err) {
+      // Optionally handle error
+    }
+  }
+
+  const handleSignOut = async () => {
+    const auth = getAuth(firebaseApp)
+    try {
+      await signOut(auth)
+    } catch (err) {
+      // Optionally handle error
+    }
+  }
 
   const navigationItems = [
     { href: "/", label: "Home", icon: null },
@@ -63,10 +94,26 @@ export function Navbar() {
 
           {/* Desktop Auth Buttons */}
           <div className="hidden md:flex items-center space-x-4">
-            <Button variant="ghost" className="text-foreground hover:text-primary">
-              Sign In
-            </Button>
-            <Button className="bg-secondary hover:bg-secondary/90 text-secondary-foreground">Get Started</Button>
+            {user ? (
+              <>
+                <div className="flex items-center space-x-2">
+                  {user.photoURL && (
+                    <img src={user.photoURL} alt={user.displayName || "User"} className="w-8 h-8 rounded-full" />
+                  )}
+                  <span className="text-sm font-medium">{user.displayName || user.email}</span>
+                </div>
+                <Button variant="ghost" className="text-foreground hover:text-primary" onClick={handleSignOut}>
+                  Sign Out
+                </Button>
+              </>
+            ) : (
+              <>
+                <Button variant="ghost" className="text-foreground hover:text-primary" onClick={handleSignIn}>
+                  Sign In with Google
+                </Button>
+                <Button className="bg-secondary hover:bg-secondary/90 text-secondary-foreground">Get Started</Button>
+              </>
+            )}
           </div>
 
           {/* Mobile menu button */}
@@ -101,10 +148,26 @@ export function Navbar() {
               })}
               <div className="pt-4 pb-3 border-t border-border">
                 <div className="flex flex-col space-y-3 px-3">
-                  <Button variant="ghost" className="justify-start text-foreground hover:text-primary">
-                    Sign In
-                  </Button>
-                  <Button className="bg-secondary hover:bg-secondary/90 text-secondary-foreground">Get Started</Button>
+                  {user ? (
+                    <>
+                      <div className="flex items-center space-x-2">
+                        {user.photoURL && (
+                          <img src={user.photoURL} alt={user.displayName || "User"} className="w-8 h-8 rounded-full" />
+                        )}
+                        <span className="text-sm font-medium">{user.displayName || user.email}</span>
+                      </div>
+                      <Button variant="ghost" className="justify-start text-foreground hover:text-primary" onClick={handleSignOut}>
+                        Sign Out
+                      </Button>
+                    </>
+                  ) : (
+                    <>
+                      <Button variant="ghost" className="justify-start text-foreground hover:text-primary" onClick={handleSignIn}>
+                        Sign In with Google
+                      </Button>
+                      <Button className="bg-secondary hover:bg-secondary/90 text-secondary-foreground">Get Started</Button>
+                    </>
+                  )}
                 </div>
               </div>
             </div>
