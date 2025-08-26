@@ -1,59 +1,53 @@
-"use client"
+"use client";
 
-import { useState, useEffect } from "react"
-import { getAuth, signInWithPopup, GoogleAuthProvider, signOut, onAuthStateChanged, User } from "firebase/auth"
-import firebaseApp from "@/lib/firebase"
-import { Button } from "@/components/ui/button"
-import { Badge } from "@/components/ui/badge"
-import { Menu, X, FileText, BarChart3, Upload, MessageCircle } from "lucide-react"
-import Link from "next/link"
-import { usePathname } from "next/navigation"
+import { useState, useEffect } from "react";
+import {
+  getAuth,
+  signInWithPopup,
+  GoogleAuthProvider,
+  signOut,
+  onAuthStateChanged,
+  User,
+} from "firebase/auth";
+import firebaseApp from "@/lib/firebase";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { Menu, X } from "lucide-react";
+import Link from "next/link";
 
 export function Navbar() {
-  const [isMenuOpen, setIsMenuOpen] = useState(false)
-  const [user, setUser] = useState<User | null>(null)
-  const pathname = usePathname()
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [user, setUser] = useState<User | null>(null);
 
   // Firebase Auth
   useEffect(() => {
-    const auth = getAuth(firebaseApp)
+    const auth = getAuth(firebaseApp);
     const unsubscribe = onAuthStateChanged(auth, (user) => {
-      setUser(user)
-    })
-    return () => unsubscribe()
-  }, [])
+      setUser(user);
+    });
+    return () => unsubscribe();
+  }, []);
 
   const handleSignIn = async () => {
-    const auth = getAuth(firebaseApp)
-    const provider = new GoogleAuthProvider()
+    const auth = getAuth(firebaseApp);
+    const provider = new GoogleAuthProvider();
     try {
-      await signInWithPopup(auth, provider)
+      await signInWithPopup(auth, provider);
     } catch (err) {
       // Optionally handle error
     }
-  }
+  };
 
   const handleSignOut = async () => {
-    const auth = getAuth(firebaseApp)
+    const auth = getAuth(firebaseApp);
     try {
-      await signOut(auth)
+      await signOut(auth);
     } catch (err) {
       // Optionally handle error
     }
-  }
+  };
 
-  const navigationItems = [
-    { href: "/", label: "Home", icon: null },
-    { href: "/upload", label: "Upload", icon: Upload },
-    { href: "/dashboard", label: "Dashboard", icon: BarChart3 },
-    { href: "/clauses", label: "Clause Analysis", icon: FileText },
-    { href: "/chat", label: "Legal Chat", icon: MessageCircle },
-  ]
-
-  const isActivePath = (href: string) => {
-    if (href === "/") return pathname === "/"
-    return pathname?.startsWith(href)
-  }
+  // Removed navigation items as per requirements - only showing Get Started and LegalEaseAI
 
   return (
     <nav className="sticky top-0 z-50 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 border-b border-border">
@@ -62,35 +56,16 @@ export function Navbar() {
           {/* Logo */}
           <div className="flex-shrink-0">
             <Link href="/" className="flex items-center space-x-2">
-              <h1 className="text-2xl font-serif font-bold text-primary">LegalEase AI</h1>
+              <h1 className="text-2xl font-serif font-bold text-primary">
+                LegalEase AI
+              </h1>
               <Badge variant="secondary" className="text-xs">
                 Beta
               </Badge>
             </Link>
           </div>
 
-          {/* Desktop Navigation */}
-          <div className="hidden md:block">
-            <div className="ml-10 flex items-baseline space-x-6">
-              {navigationItems.map((item) => {
-                const isActive = isActivePath(item.href)
-                return (
-                  <Link
-                    key={item.href}
-                    href={item.href}
-                    className={`flex items-center space-x-1 px-3 py-2 text-sm font-medium transition-colors rounded-md ${
-                      isActive
-                        ? "text-primary bg-primary/10"
-                        : "text-muted-foreground hover:text-primary hover:bg-primary/5"
-                    }`}
-                  >
-                    {item.icon && <item.icon className="h-4 w-4" />}
-                    <span>{item.label}</span>
-                  </Link>
-                )
-              })}
-            </div>
-          </div>
+          {/* Desktop Navigation - Removed as per requirements */}
 
           {/* Desktop Auth Buttons */}
           <div className="hidden md:flex items-center space-x-4">
@@ -98,74 +73,87 @@ export function Navbar() {
               <>
                 <div className="flex items-center space-x-2">
                   {user.photoURL && (
-                    <img src={user.photoURL} alt={user.displayName || "User"} className="w-8 h-8 rounded-full" />
+                    <img
+                      src={user.photoURL}
+                      alt={user.displayName || "User"}
+                      className="w-8 h-8 rounded-full"
+                    />
                   )}
-                  <span className="text-sm font-medium">{user.displayName || user.email}</span>
+                  <span className="text-sm font-medium">
+                    {user.displayName || user.email}
+                  </span>
                 </div>
-                <Button variant="ghost" className="text-foreground hover:text-primary" onClick={handleSignOut}>
+                <Button
+                  variant="ghost"
+                  className="text-foreground hover:text-primary"
+                  onClick={handleSignOut}
+                >
                   Sign Out
                 </Button>
               </>
             ) : (
               <>
-                <Button variant="ghost" className="text-foreground hover:text-primary" onClick={handleSignIn}>
-                  Sign In with Google
-                </Button>
-                <Button className="bg-secondary hover:bg-secondary/90 text-secondary-foreground">Get Started</Button>
+                <Link href="/signin">
+                  <Button className="bg-secondary hover:bg-secondary/90 text-secondary-foreground">
+                    Get Started
+                  </Button>
+                </Link>
               </>
             )}
           </div>
 
           {/* Mobile menu button */}
           <div className="md:hidden">
-            <Button variant="ghost" size="sm" onClick={() => setIsMenuOpen(!isMenuOpen)} className="text-foreground">
-              {isMenuOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setIsMenuOpen(!isMenuOpen)}
+              className="text-foreground"
+            >
+              {isMenuOpen ? (
+                <X className="h-6 w-6" />
+              ) : (
+                <Menu className="h-6 w-6" />
+              )}
             </Button>
           </div>
         </div>
 
-        {/* Mobile Navigation */}
+        {/* Mobile Navigation - Simplified */}
         {isMenuOpen && (
           <div className="md:hidden">
             <div className="px-2 pt-2 pb-3 space-y-1 sm:px-3 border-t border-border">
-              {navigationItems.map((item) => {
-                const isActive = isActivePath(item.href)
-                return (
-                  <Link
-                    key={item.href}
-                    href={item.href}
-                    className={`flex items-center space-x-2 px-3 py-2 text-base font-medium transition-colors rounded-md ${
-                      isActive
-                        ? "text-primary bg-primary/10"
-                        : "text-muted-foreground hover:text-primary hover:bg-primary/5"
-                    }`}
-                    onClick={() => setIsMenuOpen(false)}
-                  >
-                    {item.icon && <item.icon className="h-4 w-4" />}
-                    <span>{item.label}</span>
-                  </Link>
-                )
-              })}
-              <div className="pt-4 pb-3 border-t border-border">
+              <div className="pt-4 pb-3">
                 <div className="flex flex-col space-y-3 px-3">
                   {user ? (
                     <>
                       <div className="flex items-center space-x-2">
                         {user.photoURL && (
-                          <img src={user.photoURL} alt={user.displayName || "User"} className="w-8 h-8 rounded-full" />
+                          <img
+                            src={user.photoURL}
+                            alt={user.displayName || "User"}
+                            className="w-8 h-8 rounded-full"
+                          />
                         )}
-                        <span className="text-sm font-medium">{user.displayName || user.email}</span>
+                        <span className="text-sm font-medium">
+                          {user.displayName || user.email}
+                        </span>
                       </div>
-                      <Button variant="ghost" className="justify-start text-foreground hover:text-primary" onClick={handleSignOut}>
+                      <Button
+                        variant="ghost"
+                        className="justify-start text-foreground hover:text-primary"
+                        onClick={handleSignOut}
+                      >
                         Sign Out
                       </Button>
                     </>
                   ) : (
                     <>
-                      <Button variant="ghost" className="justify-start text-foreground hover:text-primary" onClick={handleSignIn}>
-                        Sign In with Google
-                      </Button>
-                      <Button className="bg-secondary hover:bg-secondary/90 text-secondary-foreground">Get Started</Button>
+                      <Link href="/signin">
+                        <Button className="w-full bg-secondary hover:bg-secondary/90 text-secondary-foreground">
+                          Get Started
+                        </Button>
+                      </Link>
                     </>
                   )}
                 </div>
@@ -175,5 +163,5 @@ export function Navbar() {
         )}
       </div>
     </nav>
-  )
+  );
 }

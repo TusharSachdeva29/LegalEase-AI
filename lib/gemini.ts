@@ -82,11 +82,11 @@ export async function analyzeDocument(
       documentText.includes("[IMAGE_FILE]") &&
       documentText.includes("data:image");
     const isPDFContent = documentText.includes("[PDF_DOCUMENT]");
-    const isUnreadablePDF = isPDFContent && (
-      documentText.includes("may contain primarily images") ||
-      documentText.includes("makes text extraction difficult") ||
-      documentText.length < 500
-    );
+    const isUnreadablePDF =
+      isPDFContent &&
+      (documentText.includes("may contain primarily images") ||
+        documentText.includes("makes text extraction difficult") ||
+        documentText.length < 500);
 
     let model;
     let prompt;
@@ -134,7 +134,7 @@ Please return a JSON object with the standard structure, noting the limitation.`
     } else if (isUnreadablePDF) {
       // Handle PDFs that couldn't be read properly
       model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
-      
+
       prompt = `${SYSTEM_PROMPT}
 
 This appears to be a PDF document that could not be properly read or contains primarily non-text content (like scanned images or complex formatting). 
@@ -175,7 +175,7 @@ Please return a JSON object with the following structure:
 }
 
 Make this helpful and informative rather than just saying it failed.`;
-      
+
       result = await model.generateContent(prompt);
     } else {
       // Use regular Gemini for text content (including PDF and Word docs)
@@ -426,17 +426,22 @@ export async function extractTextFromFile(file: File): Promise<string> {
 
           // Try to extract readable text from PDF
           let extractedText = "";
-          
+
           // Look for text patterns in PDF stream
           const streamMatches = text.match(/stream([\s\S]*?)endstream/gi);
           if (streamMatches) {
-            streamMatches.forEach(match => {
+            streamMatches.forEach((match) => {
               // Extract text between stream tags
-              const streamContent = match.replace(/^stream\s*|\s*endstream$/gi, '');
+              const streamContent = match.replace(
+                /^stream\s*|\s*endstream$/gi,
+                ""
+              );
               // Look for readable text patterns
-              const textPatterns = streamContent.match(/[A-Za-z0-9\s.,!?;:()\[\]{}"'-]{10,}/g);
+              const textPatterns = streamContent.match(
+                /[A-Za-z0-9\s.,!?;:()\[\]{}"'-]{10,}/g
+              );
               if (textPatterns) {
-                extractedText += textPatterns.join(' ') + ' ';
+                extractedText += textPatterns.join(" ") + " ";
               }
             });
           }
@@ -444,17 +449,19 @@ export async function extractTextFromFile(file: File): Promise<string> {
           // Also try to find text objects
           const textMatches = text.match(/\(([^)]+)\)/g);
           if (textMatches) {
-            textMatches.forEach(match => {
-              const textContent = match.replace(/[()]/g, '');
+            textMatches.forEach((match) => {
+              const textContent = match.replace(/[()]/g, "");
               if (textContent.length > 5 && /[a-zA-Z]/.test(textContent)) {
-                extractedText += textContent + ' ';
+                extractedText += textContent + " ";
               }
             });
           }
 
           // If we found some text, use it
           if (extractedText.trim().length > 50) {
-            resolve(`[PDF_DOCUMENT] This is a PDF document (${file.name}) with extracted text content:
+            resolve(`[PDF_DOCUMENT] This is a PDF document (${
+              file.name
+            }) with extracted text content:
 
 ${extractedText.trim()}`);
           } else {
@@ -477,7 +484,6 @@ File type: PDF Document`);
           }
         };
         reader.readAsText(file, "utf-8");
-        
       } else if (
         fileType.startsWith("image/") ||
         fileName.match(/\.(jpg|jpeg|png|gif|webp|bmp)$/)
@@ -491,7 +497,6 @@ File type: PDF Document`);
 Image Data: ${dataUrl}`);
         };
         reader.readAsDataURL(file);
-        
       } else if (
         fileType.includes("word") ||
         fileName.endsWith(".docx") ||
@@ -514,9 +519,11 @@ Image Data: ${dataUrl}`);
           extractedText = extractedText.replace(/\s+/g, " ").trim();
 
           // Look for actual content (more than just metadata)
-          const meaningfulContent = extractedText.match(/[A-Za-z0-9\s.,!?;:()\[\]{}"'-]{20,}/g);
+          const meaningfulContent = extractedText.match(
+            /[A-Za-z0-9\s.,!?;:()\[\]{}"'-]{20,}/g
+          );
           if (meaningfulContent && meaningfulContent.length > 0) {
-            const cleanContent = meaningfulContent.join(' ').trim();
+            const cleanContent = meaningfulContent.join(" ").trim();
             resolve(`[WORD_DOCUMENT] This is a Word document file (${file.name}). Here is the extracted content:
 
 ${cleanContent}`);
@@ -533,7 +540,6 @@ File type: Word Document`);
           }
         };
         reader.readAsText(file, "utf-8");
-        
       } else if (fileType === "text/plain" || fileName.endsWith(".txt")) {
         // Handle plain text files
         const reader = new FileReader();
@@ -546,7 +552,6 @@ File type: Word Document`);
           resolve(text);
         };
         reader.readAsText(file, "utf-8");
-        
       } else {
         // Handle unknown file types as text
         const reader = new FileReader();

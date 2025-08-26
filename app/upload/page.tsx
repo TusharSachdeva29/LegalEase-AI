@@ -94,8 +94,8 @@ export default function UploadPage() {
   });
 
   const handleAnalyze = () => {
-    // Navigate to dashboard
-    window.location.href = "/dashboard";
+    // Navigate to analysis page
+    window.location.href = "/analysis";
   };
 
   const handleReset = () => {
@@ -114,11 +114,11 @@ export default function UploadPage() {
           {/* Header */}
           <div className="text-center mb-8">
             <Link
-              href="/"
+              href="/dashboard"
               className="inline-flex items-center text-muted-foreground hover:text-primary transition-colors mb-4"
             >
               <ArrowLeft className="h-4 w-4 mr-2" />
-              Back to Home
+              Back to Dashboard
             </Link>
             <h1 className="text-3xl sm:text-4xl font-serif font-bold text-foreground mb-4">
               Upload Your Legal Document
