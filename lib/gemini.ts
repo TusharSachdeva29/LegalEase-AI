@@ -1,10 +1,10 @@
-import { GoogleGenerativeAI } from "@google/generative-ai";
+import { GoogleGenAI, createPartFromUri } from "@google/genai";
 
-if (!process.env.GEMINI_API_KEY) {
-  throw new Error("GEMINI_API_KEY environment variable is not set");
+if (!process.env.NEXT_PUBLIC_GEMINI_API_KEY) {
+  throw new Error("NEXT_PUBLIC_GEMINI_API_KEY environment variable is not set");
 }
 
-const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
+const genAI = new GoogleGenAI({ apiKey: process.env.NEXT_PUBLIC_GEMINI_API_KEY! });
 
 export interface DocumentAnalysis {
   title: string;
@@ -74,7 +74,7 @@ export async function analyzeDocument(
 ): Promise<DocumentAnalysis> {
   try {
     console.log("Starting document analysis...");
-    console.log("API Key exists:", !!process.env.GEMINI_API_KEY);
+    console.log("API Key exists:", !!process.env.NEXT_PUBLIC_GEMINI_API_KEY);
     console.log("Document text length:", documentText.length);
 
     // Check if this is an image file
@@ -93,9 +93,6 @@ export async function analyzeDocument(
     let result;
 
     if (isImageContent) {
-      // Use Gemini Pro Vision for images
-      model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
-
       // Extract the image data URL
       const imageDataMatch = documentText.match(
         /Image Data: (data:image\/[^;]+;base64,[^\s]+)/
@@ -112,29 +109,32 @@ Please analyze this image which may contain legal documents, contracts, business
 
 Please provide a comprehensive analysis in JSON format with the structure I specified earlier. Focus on whatever content is visible and readable in the image.`;
 
-        result = await model.generateContent([
-          prompt,
-          {
-            inlineData: {
-              data: base64Data,
-              mimeType: mimeType,
+        result = await genAI.models.generateContent({
+          model: "gemini-2.0-flash-exp",
+          contents: [
+            prompt,
+            {
+              inlineData: {
+                data: base64Data,
+                mimeType: mimeType,
+              },
             },
-          },
-        ]);
+          ],
+        });
       } else {
         // Fallback to text analysis
-        model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
         prompt = `${SYSTEM_PROMPT}
 
 This appears to be an image file that couldn't be processed properly. Please provide a generic document analysis structure indicating that the image content couldn't be analyzed.
 
 Please return a JSON object with the standard structure, noting the limitation.`;
-        result = await model.generateContent(prompt);
+        result = await genAI.models.generateContent({
+          model: "gemini-2.0-flash-exp",
+          contents: prompt,
+        });
       }
     } else if (isUnreadablePDF) {
       // Handle PDFs that couldn't be read properly
-      model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
-
       prompt = `${SYSTEM_PROMPT}
 
 This appears to be a PDF document that could not be properly read or contains primarily non-text content (like scanned images or complex formatting). 
@@ -176,11 +176,12 @@ Please return a JSON object with the following structure:
 
 Make this helpful and informative rather than just saying it failed.`;
 
-      result = await model.generateContent(prompt);
+      result = await genAI.models.generateContent({
+        model: "gemini-2.0-flash-exp",
+        contents: prompt,
+      });
     } else {
       // Use regular Gemini for text content (including PDF and Word docs)
-      model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
-
       prompt = `${SYSTEM_PROMPT}
 
 Please analyze the following document content and provide a comprehensive analysis in JSON format. 
@@ -237,12 +238,14 @@ Guidelines for your analysis:
 
 Ensure the JSON is valid and complete. Provide meaningful analysis regardless of document quality.`;
 
-      result = await model.generateContent(prompt);
+      result = await genAI.models.generateContent({
+        model: "gemini-2.0-flash-exp",
+        contents: prompt,
+      });
     }
 
     console.log("Sending request to Gemini...");
-    const response = result.response;
-    const text = response.text();
+    const text = result.text || "";
 
     console.log("Gemini response received, length:", text.length);
     console.log("Gemini response preview:", text.substring(0, 200));
@@ -354,8 +357,6 @@ export async function chatWithAI(
     console.log("Context:", context);
     console.log("Has document context:", !!documentContext);
 
-    const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
-
     let prompt = `${SYSTEM_PROMPT}
 
 Context: ${context === "document" ? "Document-specific" : "General legal"}`;
@@ -376,11 +377,13 @@ User Question: ${message}
 Please provide a helpful, clear response. If this is document-specific, reference the actual document content. If general, provide educational legal information. Always include a disclaimer that this is not legal advice.`;
 
     console.log("Sending chat request to Gemini...");
-    const result = await model.generateContent(prompt);
-    const response = result.response;
+    const result = await genAI.models.generateContent({
+      model: "gemini-2.0-flash-exp",
+      contents: prompt,
+    });
 
     console.log("Chat response received");
-    const responseText = response.text();
+    const responseText = result.text || "";
 
     // Clean up markdown formatting from Gemini response
     const cleanedResponse = responseText
@@ -407,176 +410,25 @@ Please provide a helpful, clear response. If this is document-specific, referenc
   }
 }
 
+// This function is now deprecated - use the new processDocument from document-processor.ts instead
+// which uses direct file upload to Gemini
 export async function extractTextFromFile(file: File): Promise<string> {
-  return new Promise(async (resolve, reject) => {
-    const fileType = file.type.toLowerCase();
-    const fileName = file.name.toLowerCase();
+  console.warn(
+    "extractTextFromFile is deprecated. Use processDocument from document-processor.ts instead."
+  );
 
-    try {
-      // Handle different file types
-      if (fileType === "application/pdf" || fileName.endsWith(".pdf")) {
-        // For PDF files, try to extract text using simple text parsing
-        const reader = new FileReader();
-        reader.onload = (e) => {
-          const text = e.target?.result as string;
-          if (!text) {
-            reject(new Error("Failed to read PDF file"));
-            return;
-          }
-
-          // Try to extract readable text from PDF
-          let extractedText = "";
-
-          // Look for text patterns in PDF stream
-          const streamMatches = text.match(/stream([\s\S]*?)endstream/gi);
-          if (streamMatches) {
-            streamMatches.forEach((match) => {
-              // Extract text between stream tags
-              const streamContent = match.replace(
-                /^stream\s*|\s*endstream$/gi,
-                ""
-              );
-              // Look for readable text patterns
-              const textPatterns = streamContent.match(
-                /[A-Za-z0-9\s.,!?;:()\[\]{}"'-]{10,}/g
-              );
-              if (textPatterns) {
-                extractedText += textPatterns.join(" ") + " ";
-              }
-            });
-          }
-
-          // Also try to find text objects
-          const textMatches = text.match(/\(([^)]+)\)/g);
-          if (textMatches) {
-            textMatches.forEach((match) => {
-              const textContent = match.replace(/[()]/g, "");
-              if (textContent.length > 5 && /[a-zA-Z]/.test(textContent)) {
-                extractedText += textContent + " ";
-              }
-            });
-          }
-
-          // If we found some text, use it
-          if (extractedText.trim().length > 50) {
-            resolve(`[PDF_DOCUMENT] This is a PDF document (${
-              file.name
-            }) with extracted text content:
-
-${extractedText.trim()}`);
-          } else {
-            // If no readable text found, provide a helpful message
-            resolve(`[PDF_DOCUMENT] This appears to be a PDF document (${file.name}) that may contain primarily images, scanned content, or complex formatting that makes text extraction difficult. 
-
-Please note: This PDF might be:
-- A scanned document (image-based PDF)
-- A document with complex formatting
-- A form or document with mostly graphical content
-- An image-heavy document
-
-For better analysis, you might want to:
-1. Try converting the PDF to a text file or Word document
-2. Take a screenshot of the PDF content and upload as an image
-3. Copy and paste the text content directly if possible
-
-File name: ${file.name}
-File type: PDF Document`);
-          }
-        };
-        reader.readAsText(file, "utf-8");
-      } else if (
-        fileType.startsWith("image/") ||
-        fileName.match(/\.(jpg|jpeg|png|gif|webp|bmp)$/)
-      ) {
-        // Handle image files - convert to base64 for Gemini Vision
-        const reader = new FileReader();
-        reader.onload = (e) => {
-          const dataUrl = e.target?.result as string;
-          resolve(`[IMAGE_FILE] This is an image file (${file.name}) that may contain text, legal documents, contracts, or other important information. Please analyze any visible text, legal content, business terms, or other meaningful information in this image and provide a comprehensive analysis.
-
-Image Data: ${dataUrl}`);
-        };
-        reader.readAsDataURL(file);
-      } else if (
-        fileType.includes("word") ||
-        fileName.endsWith(".docx") ||
-        fileName.endsWith(".doc")
-      ) {
-        // Handle Word documents
-        const reader = new FileReader();
-        reader.onload = (e) => {
-          const text = e.target?.result as string;
-          if (!text) {
-            reject(new Error("Failed to read Word document"));
-            return;
-          }
-
-          // Try to extract readable text from Word document
-          let extractedText = text;
-
-          // Remove common binary markers and try to extract readable text
-          extractedText = extractedText.replace(/[^\x20-\x7E\s]/g, " ");
-          extractedText = extractedText.replace(/\s+/g, " ").trim();
-
-          // Look for actual content (more than just metadata)
-          const meaningfulContent = extractedText.match(
-            /[A-Za-z0-9\s.,!?;:()\[\]{}"'-]{20,}/g
-          );
-          if (meaningfulContent && meaningfulContent.length > 0) {
-            const cleanContent = meaningfulContent.join(" ").trim();
-            resolve(`[WORD_DOCUMENT] This is a Word document file (${file.name}). Here is the extracted content:
-
-${cleanContent}`);
-          } else {
-            resolve(`[WORD_DOCUMENT] This appears to be a Word document (${file.name}) that may have complex formatting or primarily non-text content. 
-
-For better analysis, you might want to:
-1. Save the document as a plain text (.txt) file
-2. Copy and paste the content directly
-3. Save as a PDF and try uploading that
-
-File name: ${file.name}
-File type: Word Document`);
-          }
-        };
-        reader.readAsText(file, "utf-8");
-      } else if (fileType === "text/plain" || fileName.endsWith(".txt")) {
-        // Handle plain text files
-        const reader = new FileReader();
-        reader.onload = (e) => {
-          const text = e.target?.result as string;
-          if (!text) {
-            reject(new Error("Failed to extract text from file"));
-            return;
-          }
-          resolve(text);
-        };
-        reader.readAsText(file, "utf-8");
-      } else {
-        // Handle unknown file types as text
-        const reader = new FileReader();
-        reader.onload = (e) => {
-          const text = e.target?.result as string;
-          if (!text) {
-            reject(new Error("Failed to extract text from file"));
-            return;
-          }
-          resolve(`[UNKNOWN_FILE_TYPE] This is a file of type ${
-            fileType || "unknown"
-          } (${file.name}). Here is the extracted content:
-
-${text}`);
-        };
-        reader.readAsText(file, "utf-8");
+  // Simple fallback for backwards compatibility
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const text = e.target?.result as string;
+      if (!text) {
+        reject(new Error("Failed to read file"));
+        return;
       }
-    } catch (error) {
-      reject(
-        new Error(
-          `Error processing file: ${
-            error instanceof Error ? error.message : "Unknown error"
-          }`
-        )
-      );
-    }
+      resolve(text);
+    };
+    reader.onerror = () => reject(new Error("Failed to read file"));
+    reader.readAsText(file, "utf-8");
   });
 }

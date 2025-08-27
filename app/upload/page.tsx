@@ -24,7 +24,8 @@ export default function UploadPage() {
   const [uploadState, setUploadState] = useState<UploadState>("idle");
   const [uploadProgress, setUploadProgress] = useState(0);
   const [uploadedFile, setUploadedFile] = useState<File | null>(null);
-  const [processedDocument, setProcessedDocument] = useState<ProcessedDocument | null>(null);
+  const [processedDocument, setProcessedDocument] =
+    useState<ProcessedDocument | null>(null);
   const [error, setError] = useState<string>("");
 
   const onDrop = useCallback(
@@ -62,20 +63,26 @@ export default function UploadPage() {
               setTimeout(async () => {
                 setUploadState("processing");
                 setUploadProgress(0);
-                
+
                 try {
                   // Process the document with OCR/text extraction
                   const processed = await processDocument(file);
                   setProcessedDocument(processed);
-                  
+
                   // Store processed document data for dashboard
                   sessionStorage.setItem("documentText", processed.text);
                   sessionStorage.setItem("documentName", processed.fileName);
-                  sessionStorage.setItem("processingMethod", processed.processingMethod);
-                  if (processed.confidence) {
-                    sessionStorage.setItem("ocrConfidence", processed.confidence.toString());
+                  sessionStorage.setItem(
+                    "processingMethod",
+                    processed.processingMethod
+                  );
+                  if (processed.fileUri) {
+                    sessionStorage.setItem("fileUri", processed.fileUri);
                   }
-                  
+                  if (processed.mimeType) {
+                    sessionStorage.setItem("mimeType", processed.mimeType);
+                  }
+
                   // Simulate processing progress
                   let processProgress = 0;
                   const processInterval = setInterval(() => {
@@ -89,17 +96,19 @@ export default function UploadPage() {
                     }
                     setUploadProgress(processProgress);
                   }, 300);
-                  
                 } catch (processingError) {
                   console.error("Error processing document:", processingError);
-                  setError(processingError instanceof Error ? processingError.message : "Failed to process document");
+                  setError(
+                    processingError instanceof Error
+                      ? processingError.message
+                      : "Failed to process document"
+                  );
                   setUploadState("error");
                 }
               }, 500);
             }
             setUploadProgress(progress);
           }, 150);
-          
         } catch (error) {
           console.error("Error handling file:", error);
           setError("Failed to process file");
@@ -213,12 +222,14 @@ export default function UploadPage() {
                 <div className="text-center">
                   <div className="animate-spin rounded-full h-16 w-16 border-b-2 border-primary mx-auto mb-4"></div>
                   <h3 className="text-xl font-semibold text-foreground mb-2">
-                    Extracting text with OCR...
+                    Processing document with AI...
                   </h3>
                   <p className="text-muted-foreground mb-6">
-                    {uploadedFile?.type.startsWith('image/') ? 'Reading text from image' : 
-                     uploadedFile?.type === 'application/pdf' ? 'Extracting text from PDF' :
-                     'Processing document content'}
+                    {uploadedFile?.type.startsWith("image/")
+                      ? "Analyzing image content with Gemini AI"
+                      : uploadedFile?.type === "application/pdf"
+                      ? "Extracting text from PDF with Gemini AI"
+                      : "Processing document content with AI"}
                   </p>
                   <div className="max-w-md mx-auto">
                     <Progress value={uploadProgress} className="mb-2" />
@@ -238,17 +249,26 @@ export default function UploadPage() {
                     Document processed successfully!
                   </h3>
                   <p className="text-muted-foreground mb-2">
-                    {uploadedFile?.name} has been analyzed and is ready for review.
+                    {uploadedFile?.name} has been analyzed and is ready for
+                    review.
                   </p>
                   {processedDocument && (
                     <div className="text-sm text-muted-foreground mb-4 space-y-1">
-                      <p>Processing method: {processedDocument.processingMethod === 'ocr' ? 'OCR Text Recognition' : 
-                                           processedDocument.processingMethod === 'pdf-extract' ? 'PDF Text Extraction' :
-                                           'Direct Text Reading'}</p>
-                      {processedDocument.confidence && (
-                        <p>OCR Confidence: {Math.round(processedDocument.confidence)}%</p>
+                      <p>
+                        Processing method:{" "}
+                        {processedDocument.processingMethod === "gemini-direct"
+                          ? "Gemini AI Direct Upload"
+                          : processedDocument.processingMethod === "text"
+                          ? "Direct Text Reading"
+                          : "Fallback Text Extraction"}
+                      </p>
+                      <p>
+                        Extracted text: {processedDocument.text.length}{" "}
+                        characters
+                      </p>
+                      {processedDocument.fileUri && (
+                        <p>File processed successfully through Gemini API</p>
                       )}
-                      <p>Extracted text: {processedDocument.text.length} characters</p>
                     </div>
                   )}
                   <div className="flex flex-col sm:flex-row gap-4 justify-center">
@@ -322,10 +342,12 @@ export default function UploadPage() {
             </div>
             <div className="mt-6 p-4 bg-muted rounded-lg">
               <p className="text-sm text-muted-foreground">
-                <strong>Privacy Notice:</strong> Your documents are processed
-                securely and are never stored on our servers. All analysis
-                happens in real-time and your data is immediately discarded
-                after processing.
+                <strong>Enhanced AI Processing:</strong> Your documents are now
+                processed directly by Gemini AI for superior text extraction and
+                analysis. Files are uploaded securely to Google's servers for
+                processing and are automatically deleted after analysis. This
+                provides much better accuracy than traditional OCR, especially
+                for complex documents and images.
               </p>
             </div>
           </Card>

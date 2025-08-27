@@ -1,15 +1,18 @@
-import { createWorker } from 'tesseract.js';
-import * as pdfjsLib from 'pdfjs-dist';
+import { GoogleGenAI, createPartFromUri } from "@google/genai";
 
-// Configure PDF.js worker
-pdfjsLib.GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjsLib.version}/pdf.worker.min.js`;
+if (!process.env.NEXT_PUBLIC_GEMINI_API_KEY) {
+  throw new Error("NEXT_PUBLIC_GEMINI_API_KEY environment variable is not set");
+}
+
+const genAI = new GoogleGenAI({ apiKey: process.env.NEXT_PUBLIC_GEMINI_API_KEY! });
 
 export interface ProcessedDocument {
   text: string;
   fileName: string;
   fileType: string;
-  processingMethod: 'text' | 'ocr' | 'pdf-extract' | 'hybrid';
-  confidence?: number;
+  processingMethod: "gemini-direct" | "text" | "fallback";
+  fileUri?: string;
+  mimeType?: string;
 }
 
 export async function processDocument(file: File): Promise<ProcessedDocument> {
@@ -17,135 +20,131 @@ export async function processDocument(file: File): Promise<ProcessedDocument> {
   const fileName = file.name.toLowerCase();
 
   try {
-    // Handle different file types
-    if (fileType === 'application/pdf' || fileName.endsWith('.pdf')) {
-      return await processPDF(file);
-    } else if (fileType.startsWith('image/') || fileName.match(/\.(jpg|jpeg|png|gif|webp|bmp)$/)) {
-      return await processImage(file);
-    } else if (fileType === 'text/plain' || fileName.endsWith('.txt')) {
+    // Handle different file types - try Gemini direct upload first for supported types
+    if (fileType === "application/pdf" || fileName.endsWith(".pdf")) {
+      return await processWithGemini(file, "application/pdf");
+    } else if (
+      fileType.startsWith("image/") ||
+      fileName.match(/\.(jpg|jpeg|png|gif|webp|bmp)$/)
+    ) {
+      return await processWithGemini(file, fileType || "image/jpeg");
+    } else if (fileType === "text/plain" || fileName.endsWith(".txt")) {
       return await processTextFile(file);
-    } else if (fileType.includes('word') || fileName.endsWith('.docx') || fileName.endsWith('.doc')) {
+    } else if (
+      fileType.includes("word") ||
+      fileName.endsWith(".docx") ||
+      fileName.endsWith(".doc")
+    ) {
+      // For Word documents, try to extract text first, then send to Gemini
       return await processWordDocument(file);
     } else {
       // Try to process as text
       return await processTextFile(file);
     }
   } catch (error) {
-    console.error('Error processing document:', error);
-    throw new Error(`Failed to process document: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    console.error("Error processing document:", error);
+    throw new Error(
+      `Failed to process document: ${
+        error instanceof Error ? error.message : "Unknown error"
+      }`
+    );
   }
 }
 
-async function processPDF(file: File): Promise<ProcessedDocument> {
+async function processWithGemini(
+  file: File,
+  mimeType: string
+): Promise<ProcessedDocument> {
   try {
-    const arrayBuffer = await file.arrayBuffer();
-    const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
-    
-    let fullText = '';
-    let hasText = false;
-    
-    // Extract text from each page
-    for (let i = 1; i <= pdf.numPages; i++) {
-      const page = await pdf.getPage(i);
-      const textContent = await page.getTextContent();
-      
-      if (textContent.items.length > 0) {
-        hasText = true;
-        const pageText = textContent.items
-          .map((item: any) => item.str)
-          .join(' ');
-        fullText += pageText + '\n';
-      }
-    }
-    
-    if (hasText && fullText.trim().length > 100) {
-      return {
-        text: fullText.trim(),
-        fileName: file.name,
-        fileType: 'application/pdf',
-        processingMethod: 'pdf-extract'
-      };
-    } else {
-      // If no text found, try OCR on the PDF pages
-      console.log('No text found in PDF, attempting OCR...');
-      return await processPDFWithOCR(file, pdf);
-    }
-  } catch (error) {
-    console.error('Error processing PDF:', error);
-    throw new Error('Failed to extract text from PDF');
-  }
-}
+    console.log(`Processing ${file.name} with Gemini direct upload...`);
 
-async function processPDFWithOCR(file: File, pdf: any): Promise<ProcessedDocument> {
-  try {
-    const worker = await createWorker('eng');
-    let ocrText = '';
-    let totalConfidence = 0;
-    let pageCount = 0;
-    
-    // Convert PDF pages to images and run OCR
-    for (let i = 1; i <= Math.min(pdf.numPages, 5); i++) { // Limit to first 5 pages for performance
-      const page = await pdf.getPage(i);
-      const viewport = page.getViewport({ scale: 2.0 });
-      
-      const canvas = document.createElement('canvas');
-      const context = canvas.getContext('2d')!;
-      canvas.height = viewport.height;
-      canvas.width = viewport.width;
-      
-      await page.render({ canvasContext: context, viewport }).promise;
-      
-      const imageData = canvas.toDataURL('image/png');
-      const { data } = await worker.recognize(imageData);
-      
-      if (data.text.trim().length > 50) {
-        ocrText += data.text + '\n';
-        totalConfidence += data.confidence;
-        pageCount++;
-      }
-    }
-    
-    await worker.terminate();
-    
-    const averageConfidence = pageCount > 0 ? totalConfidence / pageCount : 0;
-    
-    if (ocrText.trim().length > 100) {
-      return {
-        text: ocrText.trim(),
-        fileName: file.name,
-        fileType: 'application/pdf',
-        processingMethod: 'ocr',
-        confidence: averageConfidence
-      };
-    } else {
-      throw new Error('Unable to extract readable text from PDF');
-    }
-  } catch (error) {
-    console.error('Error with PDF OCR:', error);
-    throw new Error('Failed to process PDF with OCR');
-  }
-}
+    // Convert File to Blob if needed
+    const fileBlob = new Blob([await file.arrayBuffer()], { type: mimeType });
 
-async function processImage(file: File): Promise<ProcessedDocument> {
-  try {
-    const worker = await createWorker('eng');
-    const { data } = await worker.recognize(file);
-    await worker.terminate();
-    
-    if (data.text.trim().length < 50) {
-      throw new Error('Unable to extract sufficient text from image');
+    // Upload the file to Gemini
+    const uploadedFile = await genAI.files.upload({
+      file: fileBlob,
+      config: { displayName: file.name },
+    });
+
+    console.log(`File uploaded: ${uploadedFile.name}`);
+
+    if (!uploadedFile.name) {
+      throw new Error("Failed to upload file - no file name returned");
     }
-    
+
+    // Poll until processing completes
+    let fileStatus = await genAI.files.get({ name: uploadedFile.name });
+    let retries = 0;
+    const maxRetries = 30; // 5 minutes max wait time
+
+    while (fileStatus.state === "PROCESSING" && retries < maxRetries) {
+      await new Promise((resolve) => setTimeout(resolve, 10000)); // Wait 10 seconds
+      fileStatus = await genAI.files.get({ name: uploadedFile.name });
+      console.log(`Processing status: ${fileStatus.state}`);
+      retries++;
+    }
+
+    if (fileStatus.state === "FAILED") {
+      throw new Error("File processing failed in Gemini");
+    }
+
+    if (fileStatus.state === "PROCESSING") {
+      throw new Error("File processing timed out");
+    }
+
+    // Extract text content from the file using Gemini
+    const prompt =
+      "Please extract all text content from this document. Return only the raw text content without any additional formatting or commentary.";
+
+    if (!uploadedFile.uri || !uploadedFile.mimeType) {
+      throw new Error("File upload incomplete - missing URI or MIME type");
+    }
+
+    const response = await genAI.models.generateContent({
+      model: "gemini-2.0-flash-exp",
+      contents: [
+        prompt,
+        createPartFromUri(uploadedFile.uri, uploadedFile.mimeType),
+      ],
+    });
+
+    const extractedText = response.text;
+
+    // Clean up the file after processing (optional)
+    try {
+      await genAI.files.delete({ name: uploadedFile.name });
+    } catch (deleteError) {
+      console.warn("Failed to delete uploaded file:", deleteError);
+    }
+
+    if (!extractedText || extractedText.trim().length < 10) {
+      throw new Error("No readable text content found in the document");
+    }
+
     return {
-      text: data.text.trim(),
+      text: extractedText.trim(),
       fileName: file.name,
-      fileType: file.type,
-      processingMethod: 'ocr',
-      confidence: data.confidence
+      fileType: mimeType,
+      processingMethod: "gemini-direct",
+      fileUri: uploadedFile.uri,
+      mimeType: uploadedFile.mimeType,
     };
   } catch (error) {
-    console.error('Error processing image:', error);
-    throw new Error('Failed to extract text from image using OCR');
+    console.error(`Error processing ${file.name} with Gemini:`, error);
+
+    // Fallback to text processing for non-binary files
+    if (file.type === "text/plain" || file.name.endsWith(".txt")) {
+      console.log("Falling back to text processing...");
+      return await processTextFile(file);
+    }
+
+    // For other files, return a meaningful error response
+    throw new Error(
+      `Failed to process document with Gemini: ${
+        error instanceof Error ? error.message : "Unknown error"
+      }`
+    );
   }
 }
 
@@ -155,18 +154,20 @@ async function processTextFile(file: File): Promise<ProcessedDocument> {
     reader.onload = (e) => {
       const text = e.target?.result as string;
       if (!text || text.trim().length < 10) {
-        reject(new Error('File appears to be empty or contains no readable text'));
+        reject(
+          new Error("File appears to be empty or contains no readable text")
+        );
         return;
       }
       resolve({
         text: text.trim(),
         fileName: file.name,
         fileType: file.type,
-        processingMethod: 'text'
+        processingMethod: "text",
       });
     };
-    reader.onerror = () => reject(new Error('Failed to read text file'));
-    reader.readAsText(file, 'utf-8');
+    reader.onerror = () => reject(new Error("Failed to read text file"));
+    reader.readAsText(file, "utf-8");
   });
 }
 
@@ -177,33 +178,39 @@ async function processWordDocument(file: File): Promise<ProcessedDocument> {
     const reader = new FileReader();
     reader.onload = (e) => {
       const text = e.target?.result as string;
-      
+
       // Try to extract readable text from Word document
       let extractedText = text;
-      
+
       // Remove common binary markers and try to extract readable text
-      extractedText = extractedText.replace(/[^\x20-\x7E\s]/g, ' ');
-      extractedText = extractedText.replace(/\s+/g, ' ').trim();
-      
+      extractedText = extractedText.replace(/[^\x20-\x7E\s]/g, " ");
+      extractedText = extractedText.replace(/\s+/g, " ").trim();
+
       // Look for actual content (more than just metadata)
-      const meaningfulContent = extractedText.match(/[A-Za-z0-9\s.,!?;:()\[\]{}"'-]{20,}/g);
-      
+      const meaningfulContent = extractedText.match(
+        /[A-Za-z0-9\s.,!?;:()\[\]{}"'-]{20,}/g
+      );
+
       if (meaningfulContent && meaningfulContent.length > 0) {
-        const cleanContent = meaningfulContent.join(' ').trim();
+        const cleanContent = meaningfulContent.join(" ").trim();
         if (cleanContent.length > 100) {
           resolve({
             text: cleanContent,
             fileName: file.name,
             fileType: file.type,
-            processingMethod: 'text'
+            processingMethod: "fallback",
           });
           return;
         }
       }
-      
-      reject(new Error('Unable to extract readable text from Word document. Please save as PDF or plain text.'));
+
+      reject(
+        new Error(
+          "Unable to extract readable text from Word document. Please save as PDF or plain text."
+        )
+      );
     };
-    reader.onerror = () => reject(new Error('Failed to read Word document'));
-    reader.readAsText(file, 'utf-8');
+    reader.onerror = () => reject(new Error("Failed to read Word document"));
+    reader.readAsText(file, "utf-8");
   });
 }

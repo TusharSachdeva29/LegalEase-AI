@@ -6,7 +6,7 @@ async function testGeminiConnection() {
     console.log("Testing Gemini API connection...");
 
     const apiKey =
-      process.env.GEMINI_API_KEY || "AIzaSyDDcrJS_3scPT8mskcCtLMhxVL3Yb5vV-M";
+      process.env.NEXT_PUBLIC_GEMINI_API_KEY || "AIzaSyDDcrJS_3scPT8mskcCtLMhxVL3Yb5vV-M";
     console.log("API Key exists:", !!apiKey);
     console.log("API Key format:", apiKey.substring(0, 10) + "...");
 
