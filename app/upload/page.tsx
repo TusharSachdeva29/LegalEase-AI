@@ -13,15 +13,19 @@ import {
   CheckCircle,
   AlertCircle,
   ArrowLeft,
+  Eye,
 } from "lucide-react";
 import Link from "next/link";
+import { processDocument, ProcessedDocument } from "@/lib/document-processor";
 
-type UploadState = "idle" | "uploading" | "success" | "error";
+type UploadState = "idle" | "uploading" | "processing" | "success" | "error";
 
 export default function UploadPage() {
   const [uploadState, setUploadState] = useState<UploadState>("idle");
   const [uploadProgress, setUploadProgress] = useState(0);
   const [uploadedFile, setUploadedFile] = useState<File | null>(null);
+  const [processedDocument, setProcessedDocument] =
+    useState<ProcessedDocument | null>(null);
   const [error, setError] = useState<string>("");
 
   const onDrop = useCallback(
@@ -44,36 +48,70 @@ export default function UploadPage() {
         setUploadedFile(file);
         setUploadState("uploading");
         setError("");
+        setUploadProgress(0);
 
         try {
-          // Read file content
-          const reader = new FileReader();
-          reader.onload = async (e) => {
-            const text = e.target?.result as string;
+          // Simulate upload progress
+          let progress = 0;
+          const uploadInterval = setInterval(() => {
+            progress += Math.random() * 20;
+            if (progress >= 100) {
+              progress = 100;
+              clearInterval(uploadInterval);
+              setUploadProgress(100);
+              // Start processing
+              setTimeout(async () => {
+                setUploadState("processing");
+                setUploadProgress(0);
 
-            // Store document text in sessionStorage for dashboard
-            sessionStorage.setItem("documentText", text);
-            sessionStorage.setItem("documentName", file.name);
+                try {
+                  // Process the document with OCR/text extraction
+                  const processed = await processDocument(file);
+                  setProcessedDocument(processed);
 
-            // Simulate upload progress
-            let progress = 0;
-            const interval = setInterval(() => {
-              progress += Math.random() * 15;
-              if (progress >= 100) {
-                progress = 100;
-                clearInterval(interval);
-                setTimeout(() => {
-                  setUploadState("success");
-                }, 500);
-              }
-              setUploadProgress(progress);
-            }, 200);
-          };
+                  // Store processed document data for dashboard
+                  sessionStorage.setItem("documentText", processed.text);
+                  sessionStorage.setItem("documentName", processed.fileName);
+                  sessionStorage.setItem(
+                    "processingMethod",
+                    processed.processingMethod
+                  );
+                  if (processed.fileUri) {
+                    sessionStorage.setItem("fileUri", processed.fileUri);
+                  }
+                  if (processed.mimeType) {
+                    sessionStorage.setItem("mimeType", processed.mimeType);
+                  }
 
-          reader.readAsText(file);
+                  // Simulate processing progress
+                  let processProgress = 0;
+                  const processInterval = setInterval(() => {
+                    processProgress += Math.random() * 10;
+                    if (processProgress >= 100) {
+                      processProgress = 100;
+                      clearInterval(processInterval);
+                      setTimeout(() => {
+                        setUploadState("success");
+                      }, 500);
+                    }
+                    setUploadProgress(processProgress);
+                  }, 300);
+                } catch (processingError) {
+                  console.error("Error processing document:", processingError);
+                  setError(
+                    processingError instanceof Error
+                      ? processingError.message
+                      : "Failed to process document"
+                  );
+                  setUploadState("error");
+                }
+              }, 500);
+            }
+            setUploadProgress(progress);
+          }, 150);
         } catch (error) {
-          console.error("Error reading file:", error);
-          setError("Failed to read file");
+          console.error("Error handling file:", error);
+          setError("Failed to process file");
           setUploadState("error");
         }
       }
@@ -102,6 +140,7 @@ export default function UploadPage() {
     setUploadState("idle");
     setUploadProgress(0);
     setUploadedFile(null);
+    setProcessedDocument(null);
     setError("");
   };
 
@@ -173,8 +212,8 @@ export default function UploadPage() {
                       <div className="animate-spin rounded-full h-16 w-16 border-b-2 border-primary"></div>
                     </div>
                   </div>
-                  <h3 className="text-2xl font-semibold bg-clip-text text-transparent bg-gradient-to-r from-primary to-primary/80 mb-4">
-                    Analyzing your document securely...
+                  <h3 className="text-xl font-semibold text-foreground mb-2">
+                    Uploading your document...
                   </h3>
                   <p className="text-lg text-muted-foreground/90 mb-8">
                     Processing: {uploadedFile?.name}
@@ -182,6 +221,54 @@ export default function UploadPage() {
                   <div className="max-w-md mx-auto">
                     <Progress value={uploadProgress} className="mb-3 h-2 bg-primary/10" />
                     <p className="text-sm text-primary/80 font-medium">
+                      {Math.round(uploadProgress)}% complete
+                    </p>
+                  </div>
+                </div>
+              </Card>
+            )}
+
+            {uploadState === "processing" && (
+              <Card className="p-8">
+                <div className="text-center">
+                  <div className="animate-spin rounded-full h-16 w-16 border-b-2 border-primary mx-auto mb-4"></div>
+                  <h3 className="text-xl font-semibold text-foreground mb-2">
+                    Processing document with AI...
+                  </h3>
+                  <p className="text-muted-foreground mb-6">
+                    {uploadedFile?.type.startsWith("image/")
+                      ? "Analyzing image content with Gemini AI"
+                      : uploadedFile?.type === "application/pdf"
+                      ? "Extracting text from PDF with Gemini AI"
+                      : "Processing document content with AI"}
+                  </p>
+                  <div className="max-w-md mx-auto">
+                    <Progress value={uploadProgress} className="mb-3 h-2 bg-primary/10" />
+                    <p className="text-sm text-primary/80 font-medium">
+                      {Math.round(uploadProgress)}% complete
+                    </p>
+                  </div>
+                </div>
+              </Card>
+            )}
+
+            {uploadState === "processing" && (
+              <Card className="p-8">
+                <div className="text-center">
+                  <div className="animate-spin rounded-full h-16 w-16 border-b-2 border-primary mx-auto mb-4"></div>
+                  <h3 className="text-xl font-semibold text-foreground mb-2">
+                    Processing document with AI...
+                  </h3>
+                  <p className="text-muted-foreground mb-6">
+                    {uploadedFile?.type.startsWith("image/")
+                      ? "Analyzing image content with Gemini AI"
+                      : uploadedFile?.type === "application/pdf"
+                      ? "Extracting text from PDF with Gemini AI"
+                      : "Processing document content with AI"}
+                  </p>
+                  <div className="max-w-md mx-auto">
+                    <Progress value={uploadProgress} className="mb-2" />
+                    <p className="text-sm text-muted-foreground">
                       {Math.round(uploadProgress)}% complete
                     </p>
                   </div>
@@ -205,6 +292,25 @@ export default function UploadPage() {
                     {uploadedFile?.name} has been analyzed and is ready for
                     review.
                   </p>
+                  {processedDocument && (
+                    <div className="text-sm text-muted-foreground mb-4 space-y-1">
+                      <p>
+                        Processing method:{" "}
+                        {processedDocument.processingMethod === "gemini-direct"
+                          ? "Gemini AI Direct Upload"
+                          : processedDocument.processingMethod === "text"
+                          ? "Direct Text Reading"
+                          : "Fallback Text Extraction"}
+                      </p>
+                      <p>
+                        Extracted text: {processedDocument.text.length}{" "}
+                        characters
+                      </p>
+                      {processedDocument.fileUri && (
+                        <p>File processed successfully through Gemini API</p>
+                      )}
+                    </div>
+                  )}
                   <div className="flex flex-col sm:flex-row gap-4 justify-center">
                     <Button
                       onClick={handleAnalyze}
@@ -219,6 +325,12 @@ export default function UploadPage() {
                     >
                       Upload Another Document
                     </Button>
+                    {processedDocument && (
+                      <Button variant="ghost" size="sm" className="text-xs">
+                        <Eye className="h-3 w-3 mr-1" />
+                        Preview Text
+                      </Button>
+                    )}
                   </div>
                 </div>
               </Card>
@@ -274,10 +386,12 @@ export default function UploadPage() {
             </div>
             <div className="mt-6 p-4 bg-muted rounded-lg">
               <p className="text-sm text-muted-foreground">
-                <strong>Privacy Notice:</strong> Your documents are processed
-                securely and are never stored on our servers. All analysis
-                happens in real-time and your data is immediately discarded
-                after processing.
+                <strong>Enhanced AI Processing:</strong> Your documents are now
+                processed directly by Gemini AI for superior text extraction and
+                analysis. Files are uploaded securely to Google's servers for
+                processing and are automatically deleted after analysis. This
+                provides much better accuracy than traditional OCR, especially
+                for complex documents and images.
               </p>
             </div>
           </Card>
