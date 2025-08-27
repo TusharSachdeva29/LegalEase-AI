@@ -39,8 +39,16 @@ export default function AnalysisPage() {
   return (
     <div className="min-h-screen bg-background">
       <Navbar />
-
-      <main className="py-6 px-4 sm:px-6 lg:px-8">
+      <div className="pt-4 pl-4">
+        <Link
+        href="/dashboard"
+        className="inline-flex items-center text-muted-foreground hover:text-primary transition-all duration-300 hover:scale-105 bg-white/5 px-4 py-2 rounded-full backdrop-blur-sm border border-primary/10"
+      >
+        <ArrowLeft className="h-4 w-4 mr-2" />
+        Back to Dashboard
+      </Link>
+      </div>
+      <main className="px-4 sm:px-6 lg:px-8">
         <div className="max-w-7xl mx-auto">
           {/* Header */}
           <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6">

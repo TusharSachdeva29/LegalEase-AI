@@ -105,16 +105,16 @@ export default function DashboardPage() {
   const isLawyer = userProfile.userType === "lawyer";
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-gradient-to-b from-background to-background/95">
       <Navbar />
 
-      <main className="py-6 px-4 sm:px-6 lg:px-8">
+      <main className="py-8 px-4 sm:px-6 lg:px-8">
         <div className="max-w-7xl mx-auto">
           {/* Welcome Header */}
-          <div className="mb-8">
-            <div className="flex items-center justify-between">
+          <div className="mb-10">
+            <div className="flex items-center justify-between bg-white/5 p-6 rounded-xl backdrop-blur-sm border border-primary/10">
               <div>
-                <h1 className="text-3xl font-serif font-bold text-foreground">
+                <h1 className="text-4xl font-serif font-bold bg-clip-text text-transparent bg-gradient-to-r from-primary to-primary/80">
                   Welcome back, {user.displayName || "User"}
                 </h1>
                 <div className="flex items-center space-x-2 mt-2">
@@ -139,18 +139,18 @@ export default function DashboardPage() {
           </div>
 
           {/* Quick Stats */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-            <Card>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-10">
+            <Card className="group transition-all duration-300 hover:shadow-xl hover:shadow-primary/5 hover:border-primary/20">
               <CardContent className="p-6">
                 <div className="flex items-center space-x-4">
-                  <div className="p-3 bg-primary/10 rounded-lg">
+                  <div className="p-3 bg-primary/10 rounded-lg transition-transform duration-300 group-hover:scale-110">
                     <FileText className="h-6 w-6 text-primary" />
                   </div>
                   <div>
-                    <p className="text-sm text-muted-foreground">
+                    <p className="text-sm text-muted-foreground font-medium">
                       Documents Analyzed
                     </p>
-                    <p className="text-2xl font-bold">
+                    <p className="text-2xl font-bold text-primary">
                       {documentHistory.length}
                     </p>
                   </div>
@@ -199,17 +199,17 @@ export default function DashboardPage() {
           </div>
 
           {/* Main Action Cards */}
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-10">
             {/* Upload Document */}
-            <Card className="hover:shadow-lg transition-shadow">
-              <CardHeader>
+            <Card className="group hover:shadow-xl hover:shadow-primary/10 transition-all duration-300 hover:border-primary/20 backdrop-blur-sm">
+              <CardHeader className="space-y-4">
                 <div className="flex items-center space-x-4">
-                  <div className="p-3 bg-primary/10 rounded-lg">
+                  <div className="p-3 bg-gradient-to-br from-primary/20 to-primary/10 rounded-lg transition-transform duration-300 group-hover:scale-110">
                     <Upload className="h-8 w-8 text-primary" />
                   </div>
                   <div>
-                    <CardTitle>Upload Document</CardTitle>
-                    <CardDescription>
+                    <CardTitle className="text-xl font-semibold bg-clip-text text-transparent bg-gradient-to-r from-primary to-primary/80">Upload Document</CardTitle>
+                    <CardDescription className="text-muted-foreground/90">
                       {isLawyer
                         ? "Analyze contracts and legal documents for your clients"
                         : "Upload your legal documents for AI-powered analysis"}
@@ -218,8 +218,8 @@ export default function DashboardPage() {
                 </div>
               </CardHeader>
               <CardContent>
-                <Link href="/upload">
-                  <Button className="w-full">Start New Analysis</Button>
+                <Link href="/upload" className="block">
+                  <Button className="w-full bg-gradient-to-r from-primary to-primary/90 hover:from-primary/90 hover:to-primary transition-all duration-300 shadow-lg shadow-primary/20 hover:shadow-primary/30">Start New Analysis</Button>
                 </Link>
               </CardContent>
             </Card>
@@ -300,15 +300,17 @@ export default function DashboardPage() {
           </div>
 
           {/* Recent Activity */}
-          <Card>
+          <Card className="hover:shadow-lg transition-all duration-300 border border-primary/10">
             <CardHeader>
               <div className="flex items-center justify-between">
-                <div className="flex items-center space-x-2">
-                  <Clock className="h-5 w-5 text-muted-foreground" />
-                  <CardTitle>Recent Activity</CardTitle>
+                <div className="flex items-center space-x-3">
+                  <div className="p-2 bg-gradient-to-br from-primary/20 to-primary/10 rounded-lg">
+                    <Clock className="h-5 w-5 text-primary" />
+                  </div>
+                  <CardTitle className="text-xl font-semibold bg-clip-text text-transparent bg-gradient-to-r from-primary to-primary/80">Recent Activity</CardTitle>
                 </div>
                 {documentHistory.length > 3 && (
-                  <Button variant="ghost" size="sm">
+                  <Button variant="ghost" size="sm" className="hover:text-primary transition-colors">
                     View All
                   </Button>
                 )}
@@ -316,16 +318,20 @@ export default function DashboardPage() {
             </CardHeader>
             <CardContent>
               {documentHistory.length === 0 ? (
-                <div className="text-center py-8">
-                  <FileText className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-                  <p className="text-muted-foreground">
+                <div className="text-center py-12 px-6">
+                  <div className="p-4 bg-gradient-to-br from-primary/20 to-primary/5 rounded-full w-fit mx-auto mb-6">
+                    <FileText className="h-12 w-12 text-primary mx-auto" />
+                  </div>
+                  <p className="text-lg font-medium text-primary/80 mb-2">
                     No documents analyzed yet
                   </p>
-                  <p className="text-sm text-muted-foreground mb-4">
+                  <p className="text-sm text-muted-foreground mb-6">
                     Upload your first document to get started
                   </p>
                   <Link href="/upload">
-                    <Button>Upload Document</Button>
+                    <Button className="bg-gradient-to-r from-primary to-primary/90 hover:from-primary/90 hover:to-primary transition-all duration-300 shadow-lg shadow-primary/20 hover:shadow-primary/30">
+                      Upload Document
+                    </Button>
                   </Link>
                 </div>
               ) : (
@@ -333,30 +339,30 @@ export default function DashboardPage() {
                   {documentHistory.slice(0, 3).map((doc) => (
                     <div
                       key={doc.id}
-                      className="flex items-center justify-between p-4 border rounded-lg"
+                      className="flex items-center justify-between p-4 bg-gradient-to-r from-white/5 to-transparent hover:from-white/10 border border-primary/10 rounded-lg transition-all duration-300 group cursor-pointer"
                     >
                       <div className="flex items-center space-x-4">
                         <div
-                          className={`p-2 rounded-lg ${
+                          className={`p-2 rounded-lg transition-transform duration-300 group-hover:scale-110 ${
                             doc.status === "analyzed"
-                              ? "bg-green-500/10"
+                              ? "bg-gradient-to-br from-green-500/20 to-green-500/10"
                               : doc.status === "pending"
-                              ? "bg-yellow-500/10"
-                              : "bg-red-500/10"
+                              ? "bg-gradient-to-br from-yellow-500/20 to-yellow-500/10"
+                              : "bg-gradient-to-br from-red-500/20 to-red-500/10"
                           }`}
                         >
                           <FileText
                             className={`h-4 w-4 ${
                               doc.status === "analyzed"
-                                ? "text-green-600"
+                                ? "text-green-500"
                                 : doc.status === "pending"
-                                ? "text-yellow-600"
-                                : "text-red-600"
+                                ? "text-yellow-500"
+                                : "text-red-500"
                             }`}
                           />
                         </div>
                         <div>
-                          <p className="font-medium">{doc.name}</p>
+                          <p className="font-medium text-foreground/90 group-hover:text-primary transition-colors">{doc.name}</p>
                           <p className="text-sm text-muted-foreground">
                             {doc.type} •{" "}
                             {new Date(doc.uploadDate).toLocaleDateString()}
@@ -364,9 +370,8 @@ export default function DashboardPage() {
                         </div>
                       </div>
                       <Badge
-                        variant={
-                          doc.status === "analyzed" ? "default" : "secondary"
-                        }
+                        variant={doc.status === "analyzed" ? "default" : "secondary"}
+                        className="transition-transform duration-300 group-hover:scale-105"
                       >
                         {doc.status}
                       </Badge>
@@ -379,19 +384,19 @@ export default function DashboardPage() {
 
           {/* Lawyer-specific section */}
           {isLawyer && (
-            <div className="mt-8">
-              <h2 className="text-2xl font-semibold mb-6">
+            <div className="mt-10">
+              <h2 className="text-2xl font-semibold mb-6 bg-clip-text text-transparent bg-gradient-to-r from-primary to-primary/80">
                 Professional Tools
               </h2>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <Card>
+                <Card className="group hover:shadow-xl hover:shadow-primary/10 transition-all duration-300 hover:border-primary/20 backdrop-blur-sm">
                   <CardHeader>
                     <div className="flex items-center space-x-4">
-                      <div className="p-3 bg-indigo-500/10 rounded-lg">
-                        <Users className="h-6 w-6 text-indigo-600" />
+                      <div className="p-3 bg-gradient-to-br from-indigo-500/20 to-indigo-500/10 rounded-lg transition-transform duration-300 group-hover:scale-110">
+                        <Users className="h-6 w-6 text-indigo-500" />
                       </div>
                       <div>
-                        <CardTitle>Client Portal</CardTitle>
+                        <CardTitle className="text-xl font-semibold text-indigo-500/90">Client Portal</CardTitle>
                         <CardDescription>
                           Manage your client documents and cases
                         </CardDescription>
@@ -399,7 +404,7 @@ export default function DashboardPage() {
                     </div>
                   </CardHeader>
                   <CardContent>
-                    <Button variant="outline" className="w-full">
+                    <Button variant="outline" className="w-full hover:bg-indigo-500/10 hover:text-indigo-500 transition-all duration-300">
                       Access Client Portal
                     </Button>
                   </CardContent>

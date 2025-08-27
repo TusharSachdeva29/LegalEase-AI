@@ -145,71 +145,106 @@ export default function UploadPage() {
   };
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-gradient-to-b from-background to-background/95">
       <Navbar />
+      <div className="pt-4 pl-4">
+        <Link
+        href="/dashboard"
+        className="inline-flex items-center text-muted-foreground hover:text-primary transition-all duration-300 hover:scale-105 bg-white/5 px-4 py-2 rounded-full backdrop-blur-sm border border-primary/10"
+      >
+        <ArrowLeft className="h-4 w-4 mr-2" />
+        Back to Dashboard
+      </Link>
+      </div>
 
-      <main className="py-12 px-4 sm:px-6 lg:px-8">
+      <main className="px-4 sm:px-6 lg:px-8">
         <div className="max-w-4xl mx-auto">
           {/* Header */}
-          <div className="text-center mb-8">
-            <Link
-              href="/dashboard"
-              className="inline-flex items-center text-muted-foreground hover:text-primary transition-colors mb-4"
-            >
-              <ArrowLeft className="h-4 w-4 mr-2" />
-              Back to Dashboard
-            </Link>
-            <h1 className="text-3xl sm:text-4xl font-serif font-bold text-foreground mb-4">
+          <div className="text-center mb-12 space-y-6">
+            <h1 className="text-4xl sm:text-5xl font-serif font-bold bg-clip-text text-transparent bg-gradient-to-r from-primary to-primary/80 mb-4">
               Upload Your Legal Document
             </h1>
-            <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
+            <p className="text-lg text-muted-foreground/90 max-w-2xl mx-auto leading-relaxed">
               Upload your contract, agreement, or terms of service to get
               instant AI-powered analysis and plain-English explanations.
             </p>
           </div>
 
           {/* Upload Section */}
-          <div className="mb-8">
+          <div className="mb-12">
             {uploadState === "idle" && (
-              <Card className="p-8">
+              <Card className="p-8 hover:shadow-xl transition-all duration-500 hover:shadow-primary/5 border border-primary/10 backdrop-blur-sm">
                 <div
                   {...getRootProps()}
-                  className={`border-2 border-dashed rounded-lg p-12 text-center cursor-pointer transition-colors ${
+                  className={`border-2 border-dashed rounded-xl p-16 text-center cursor-pointer transition-all duration-300 group ${
                     isDragActive
-                      ? "border-secondary bg-secondary/5"
-                      : "border-border hover:border-secondary hover:bg-secondary/5"
+                      ? "border-primary bg-primary/5 scale-[0.99]"
+                      : "border-primary/20 hover:border-primary hover:bg-primary/5"
                   }`}
                 >
                   <input {...getInputProps()} />
-                  <Upload className="h-16 w-16 text-muted-foreground mx-auto mb-4" />
-                  <h3 className="text-xl font-semibold text-foreground mb-2">
-                    {isDragActive
-                      ? "Drop your file here"
-                      : "Drop your file here or click to browse"}
-                  </h3>
-                  <p className="text-muted-foreground mb-4">
-                    Supports PDF, DOCX, and image files up to 10MB
-                  </p>
-                  <Button variant="outline" className="mt-2 bg-transparent">
-                    Choose File
-                  </Button>
+                  <div className={`transition-transform duration-500 ${isDragActive ? 'scale-110' : 'group-hover:scale-110'}`}>
+                    <div className="p-4 bg-gradient-to-br from-primary/20 to-primary/5 rounded-full w-fit mx-auto mb-6">
+                      <Upload className="h-16 w-16 text-primary mx-auto" />
+                    </div>
+                    <h3 className="text-2xl font-semibold bg-clip-text text-transparent bg-gradient-to-r from-primary to-primary/80 mb-4">
+                      {isDragActive
+                        ? "Drop your file here"
+                        : "Drop your file here or click to browse"}
+                    </h3>
+                    <p className="text-muted-foreground/90 mb-6 text-lg">
+                      Supports PDF, DOCX, and image files up to 10MB
+                    </p>
+                    <Button variant="outline" className="mt-2 bg-white/5 border-primary/20 hover:bg-primary/10 hover:text-primary transition-all duration-300">
+                      Choose File
+                    </Button>
+                  </div>
                 </div>
               </Card>
             )}
 
             {uploadState === "uploading" && (
-              <Card className="p-8">
+              <Card className="p-12 border border-primary/10 backdrop-blur-sm hover:shadow-xl transition-all duration-500 hover:shadow-primary/5">
                 <div className="text-center">
-                  <div className="animate-spin rounded-full h-16 w-16 border-b-2 border-secondary mx-auto mb-4"></div>
+                  <div className="relative">
+                    <div className="absolute inset-0 bg-gradient-to-r from-primary to-primary/80 rounded-full blur-xl opacity-20 animate-pulse"></div>
+                    <div className="relative p-4 bg-gradient-to-br from-primary/20 to-primary/5 rounded-full w-fit mx-auto mb-6">
+                      <div className="animate-spin rounded-full h-16 w-16 border-b-2 border-primary"></div>
+                    </div>
+                  </div>
                   <h3 className="text-xl font-semibold text-foreground mb-2">
                     Uploading your document...
                   </h3>
-                  <p className="text-muted-foreground mb-6">
+                  <p className="text-lg text-muted-foreground/90 mb-8">
                     Processing: {uploadedFile?.name}
                   </p>
                   <div className="max-w-md mx-auto">
-                    <Progress value={uploadProgress} className="mb-2" />
-                    <p className="text-sm text-muted-foreground">
+                    <Progress value={uploadProgress} className="mb-3 h-2 bg-primary/10" />
+                    <p className="text-sm text-primary/80 font-medium">
+                      {Math.round(uploadProgress)}% complete
+                    </p>
+                  </div>
+                </div>
+              </Card>
+            )}
+
+            {uploadState === "processing" && (
+              <Card className="p-8">
+                <div className="text-center">
+                  <div className="animate-spin rounded-full h-16 w-16 border-b-2 border-primary mx-auto mb-4"></div>
+                  <h3 className="text-xl font-semibold text-foreground mb-2">
+                    Processing document with AI...
+                  </h3>
+                  <p className="text-muted-foreground mb-6">
+                    {uploadedFile?.type.startsWith("image/")
+                      ? "Analyzing image content with Gemini AI"
+                      : uploadedFile?.type === "application/pdf"
+                      ? "Extracting text from PDF with Gemini AI"
+                      : "Processing document content with AI"}
+                  </p>
+                  <div className="max-w-md mx-auto">
+                    <Progress value={uploadProgress} className="mb-3 h-2 bg-primary/10" />
+                    <p className="text-sm text-primary/80 font-medium">
                       {Math.round(uploadProgress)}% complete
                     </p>
                   </div>
@@ -242,13 +277,18 @@ export default function UploadPage() {
             )}
 
             {uploadState === "success" && (
-              <Card className="p-8">
+              <Card className="p-12 border border-primary/10 backdrop-blur-sm hover:shadow-xl transition-all duration-500 hover:shadow-primary/5">
                 <div className="text-center">
-                  <CheckCircle className="h-16 w-16 text-secondary mx-auto mb-4" />
-                  <h3 className="text-xl font-semibold text-foreground mb-2">
-                    Document processed successfully!
+                  <div className="relative">
+                    <div className="absolute inset-0 bg-gradient-to-r from-green-500 to-primary rounded-full blur-xl opacity-20"></div>
+                    <div className="relative p-4 bg-gradient-to-br from-green-500/20 to-green-500/5 rounded-full w-fit mx-auto mb-6">
+                      <CheckCircle className="h-16 w-16 text-green-500" />
+                    </div>
+                  </div>
+                  <h3 className="text-2xl font-semibold bg-clip-text text-transparent bg-gradient-to-r from-green-500 to-primary mb-4">
+                    Document uploaded successfully!
                   </h3>
-                  <p className="text-muted-foreground mb-2">
+                  <p className="text-lg text-muted-foreground/90 mb-8">
                     {uploadedFile?.name} has been analyzed and is ready for
                     review.
                   </p>
@@ -274,11 +314,15 @@ export default function UploadPage() {
                   <div className="flex flex-col sm:flex-row gap-4 justify-center">
                     <Button
                       onClick={handleAnalyze}
-                      className="bg-secondary hover:bg-secondary/90"
+                      className="bg-gradient-to-r from-primary to-primary/90 hover:from-primary/90 hover:to-primary transition-all duration-300 shadow-lg shadow-primary/20 hover:shadow-primary/30 text-white"
                     >
                       View Analysis
                     </Button>
-                    <Button variant="outline" onClick={handleReset}>
+                    <Button 
+                      variant="outline" 
+                      onClick={handleReset}
+                      className="border-primary/20 hover:bg-primary/10 hover:text-primary transition-all duration-300"
+                    >
                       Upload Another Document
                     </Button>
                     {processedDocument && (

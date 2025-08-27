@@ -4,26 +4,26 @@
 @custom-variant dark (&:is(.dark *));
 
 :root {
-  /* Updated color tokens to match LegalEase AI design brief */
-  --background: oklch(1 0 0); /* #FFFFFF */
-  --foreground: oklch(0.16 0.04 240); /* #0A2540 Navy Blue */
-  --card: oklch(0.98 0.005 240); /* #F8F9FA Light Gray */
-  --card-foreground: oklch(0.16 0.04 240); /* #0A2540 */
+  /* Google themed green and white color scheme */
+  --background: oklch(1 0 0); /* #FFFFFF - Clean white background */
+  --foreground: oklch(0.45 0.15 145); /* #34A853 - Google Green */
+  --card: oklch(0.98 0.01 145); /* #F8FAF8 - Very light green tint */
+  --card-foreground: oklch(0.45 0.15 145); /* #34A853 - Google Green */
   --popover: oklch(1 0 0); /* #FFFFFF */
-  --popover-foreground: oklch(0.16 0.04 240); /* #0A2540 */
-  --primary: oklch(0.16 0.04 240); /* #0A2540 Navy Blue */
+  --popover-foreground: oklch(0.45 0.15 145); /* #34A853 */
+  --primary: oklch(0.45 0.15 145); /* #34A853 - Google Green */
   --primary-foreground: oklch(1 0 0); /* #FFFFFF */
-  --secondary: oklch(0.7 0.15 145); /* #2ECC71 Emerald Green */
+  --secondary: oklch(0.6 0.12 145); /* #40C463 - Lighter green */
   --secondary-foreground: oklch(1 0 0); /* #FFFFFF */
-  --muted: oklch(0.94 0.005 240); /* #E9ECEF */
-  --muted-foreground: oklch(0.45 0.01 240); /* #6C757D */
-  --accent: oklch(0.7 0.15 145); /* #2ECC71 Emerald Green */
+  --muted: oklch(0.96 0.02 145); /* #F0F6F0 - Very light green */
+  --muted-foreground: oklch(0.55 0.08 145); /* #75B575 - Muted green */
+  --accent: oklch(0.35 0.15 145); /* #2E7D32 - Darker green */
   --accent-foreground: oklch(1 0 0); /* #FFFFFF */
-  --destructive: oklch(0.55 0.2 25); /* #DC3545 */
+  --destructive: oklch(0.55 0.2 25); /* Keep red for destructive actions */
   --destructive-foreground: oklch(1 0 0); /* #FFFFFF */
-  --border: oklch(0.82 0.01 240); /* #CED4DA */
+  --border: oklch(0.9 0.03 145); /* #E8F5E8 - Light green border */
   --input: oklch(1 0 0); /* #FFFFFF */
-  --ring: oklch(0.16 0.04 240 / 0.1); /* Navy Blue with opacity */
+  --ring: oklch(0.45 0.15 145 / 0.2); /* Google Green with opacity */
   --chart-1: oklch(0.55 0.2 240); /* #007BFF */
   --chart-2: oklch(0.45 0.25 280); /* #6F42C1 */
   --chart-3: oklch(0.65 0.15 165); /* #20C997 */
@@ -41,25 +41,25 @@
 }
 
 .dark {
-  --background: oklch(0.12 0.02 240); /* Dark navy background */
-  --foreground: oklch(0.95 0.01 240); /* Light text */
-  --card: oklch(0.18 0.02 240); /* Darker navy cards */
-  --card-foreground: oklch(0.95 0.01 240); /* Light card text */
-  --popover: oklch(0.18 0.02 240); /* Dark popover */
-  --popover-foreground: oklch(0.95 0.01 240); /* Light popover text */
-  --primary: oklch(0.95 0.01 240); /* Light primary in dark mode */
-  --primary-foreground: oklch(0.12 0.02 240); /* Dark text on light primary */
-  --secondary: oklch(0.7 0.15 145); /* Keep emerald green */
+  --background: oklch(0.15 0.04 145); /* Dark green background */
+  --foreground: oklch(1 0 0); /* White text */
+  --card: oklch(0.18 0.06 145); /* Darker green cards */
+  --card-foreground: oklch(0.98 0.01 145); /* Light green text */
+  --popover: oklch(0.18 0.06 145); /* Dark green popover */
+  --popover-foreground: oklch(1 0 0); /* White text */
+  --primary: oklch(0.45 0.15 145); /* Google Green */
+  --primary-foreground: oklch(1 0 0); /* White text */
+  --secondary: oklch(0.3 0.1 145); /* Dark green */
   --secondary-foreground: oklch(1 0 0); /* White text */
-  --muted: oklch(0.25 0.02 240); /* Muted dark navy */
-  --muted-foreground: oklch(0.7 0.01 240); /* Lighter muted text */
-  --accent: oklch(0.7 0.15 145); /* Keep emerald green */
-  --accent-foreground: oklch(1 0 0); /* White text */
+  --muted: oklch(0.25 0.08 145); /* Muted dark green */
+  --muted-foreground: oklch(0.8 0.05 145); /* Light green text */
+  --accent: oklch(0.6 0.12 145); /* Lighter green accent */
+  --accent-foreground: oklch(0.15 0.04 145); /* Dark green text */
   --destructive: oklch(0.55 0.2 25); /* Keep red */
   --destructive-foreground: oklch(1 0 0); /* White text */
-  --border: oklch(0.3 0.02 240); /* Dark border */
-  --input: oklch(0.25 0.02 240); /* Dark input */
-  --ring: oklch(0.7 0.15 145 / 0.5); /* Emerald ring in dark mode */
+  --border: oklch(0.25 0.08 145); /* Dark green border */
+  --input: oklch(0.2 0.06 145); /* Dark green input */
+  --ring: oklch(0.45 0.15 145 / 0.5); /* Google Green ring */
   --chart-1: oklch(0.55 0.2 240);
   --chart-2: oklch(0.45 0.25 280);
   --chart-3: oklch(0.65 0.15 165);
