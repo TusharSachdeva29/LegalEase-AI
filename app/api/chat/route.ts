@@ -4,7 +4,8 @@ import { chatWithAI } from "@/lib/gemini";
 export async function POST(request: NextRequest) {
   try {
     console.log("Chat API called");
-    const { message, context, documentContext } = await request.json();
+    const { message, context, documentContext, documentName } =
+      await request.json();
 
     if (!message) {
       console.log("No message provided");
@@ -16,11 +17,21 @@ export async function POST(request: NextRequest) {
 
     console.log("Message:", message);
     console.log("Context:", context);
+    console.log("Has document context:", !!documentContext);
+    console.log("Document name:", documentName);
+
+    // If we have document context, it should be the full document text, not just the name
+    const fullDocumentContext =
+      documentContext &&
+      typeof documentContext === "string" &&
+      documentContext.length > 50
+        ? documentContext
+        : undefined;
 
     const response = await chatWithAI(
       message,
       context || "general",
-      documentContext
+      fullDocumentContext
     );
 
     console.log("Chat completed successfully");
