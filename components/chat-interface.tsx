@@ -33,25 +33,53 @@ export function ChatInterface({
   documentContext = false,
   documentName,
 }: ChatInterfaceProps) {
-  const [messages, setMessages] = useState<Message[]>([
-    {
-      id: "1",
-      type: "ai",
-      content: documentContext
-        ? `Hello! I'm here to help you understand your document${
-            documentName ? ` "${documentName}"` : ""
-          }. Ask me anything about the clauses, risks, or legal implications.`
-        : "Hello! I'm your legal AI assistant. I can help with general legal questions, contract advice, and document analysis. How can I assist you today?",
-      timestamp: new Date(),
-      context: documentContext ? "document" : "general",
-    },
-  ]);
+  const [messages, setMessages] = useState<Message[]>([]);
   const [inputValue, setInputValue] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [chatMode, setChatMode] = useState<"general" | "document">(
     documentContext ? "document" : "general"
   );
+  const [documentText, setDocumentText] = useState<string>("");
+  const [hasDocumentText, setHasDocumentText] = useState<boolean>(false);
   const scrollAreaRef = useRef<HTMLDivElement>(null);
+
+  // Load document text from sessionStorage on component mount
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      const storedText = sessionStorage.getItem("documentText");
+      if (storedText) {
+        setDocumentText(storedText);
+        setHasDocumentText(true);
+        console.log(
+          "Document text loaded for chat:",
+          storedText.length,
+          "characters"
+        );
+      } else {
+        console.log("No document text found in sessionStorage");
+      }
+    }
+  }, []);
+
+  // Initialize messages after component mounts and document text is checked
+  useEffect(() => {
+    if (messages.length === 0) {
+      const initialMessage: Message = {
+        id: "1",
+        type: "ai",
+        content: documentContext
+          ? hasDocumentText
+            ? `Hello! I'm here to help you understand your document${
+                documentName ? ` "${documentName}"` : ""
+              }. I have access to the full document content and can answer specific questions about clauses, risks, or legal implications.`
+            : `Hello! I'm your legal AI assistant. It looks like you don't have a document uploaded yet. Upload a document first to get specific analysis, or ask me general legal questions.`
+          : "Hello! I'm your legal AI assistant. I can help with general legal questions, contract advice, and document analysis. How can I assist you today?",
+        timestamp: new Date(),
+        context: documentContext ? "document" : "general",
+      };
+      setMessages([initialMessage]);
+    }
+  }, [documentContext, documentName, hasDocumentText, messages.length]);
 
   const scrollToBottom = () => {
     if (scrollAreaRef.current) {
@@ -92,7 +120,11 @@ export function ChatInterface({
         body: JSON.stringify({
           message: inputValue,
           context: chatMode,
-          documentContext: documentContext ? documentName : undefined,
+          documentContext:
+            chatMode === "document" && hasDocumentText
+              ? documentText
+              : undefined,
+          documentName: documentName,
         }),
       });
 
@@ -162,9 +194,13 @@ export function ChatInterface({
               size="sm"
               onClick={() => setChatMode("document")}
               className="flex items-center gap-2"
+              disabled={!hasDocumentText}
             >
               <FileText className="w-4 h-4" />
               Document Analysis
+              {!hasDocumentText && (
+                <span className="text-xs opacity-60">(No document)</span>
+              )}
             </Button>
           </div>
         </div>
@@ -232,7 +268,9 @@ export function ChatInterface({
             onKeyPress={handleKeyPress}
             placeholder={
               chatMode === "document"
-                ? "Ask about clauses, risks, or legal implications..."
+                ? hasDocumentText
+                  ? "Ask about clauses, risks, or legal implications in your document..."
+                  : "Please upload a document first to ask specific questions..."
                 : "Ask any legal question..."
             }
             className="flex-1"
