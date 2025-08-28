@@ -54,21 +54,21 @@ export default function ClausesPage() {
   return (
     <div className="min-h-screen bg-background">
       <Navbar />
-      <div className="pt-4 pl-4">
+      <div className="pt-4 pr-4 flex justify-end">
         <Link
-        href="/dashboard"
-        className="inline-flex items-center text-muted-foreground hover:text-primary transition-all duration-300 hover:scale-105 bg-white/5 px-4 py-2 rounded-full backdrop-blur-sm border border-primary/10"
-      >
-        <ArrowLeft className="h-4 w-4 mr-2" />
-        Back to Dashboard
-      </Link>
+          href="/dashboard"
+          className="inline-flex items-center text-muted-foreground hover:text-primary transition-all duration-300 hover:scale-105 bg-white/5 px-4 py-2 rounded-full backdrop-blur-sm border border-primary/10"
+        >
+          <ArrowLeft className="h-4 w-4 mr-2" />
+          Back to Dashboard
+        </Link>
       </div>
       <main className="py-6 px-4 sm:px-6 lg:px-8">
         <div className="max-w-7xl mx-auto">
           {/* Header */}
           <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6">
             <div>
-              <h1 className="text-2xl sm:text-3xl font-serif font-bold text-foreground">
+              <h1 className="text-2xl sm:text-3xl font-bold text-foreground">
                 Clause Breakdown
               </h1>
               <p className="text-muted-foreground mt-1">

@@ -175,7 +175,7 @@ export function ChatInterface({
   };
 
   return (
-    <Card className="w-full max-w-4xl mx-auto h-[600px] flex flex-col">
+    <Card className="w-full max-w-4xl mx-auto h-[600px] flex flex-col p-0">
       {/* Chat Mode Toggle */}
       {!documentContext && (
         <div className="p-4 border-b border-border">
@@ -207,7 +207,7 @@ export function ChatInterface({
       )}
 
       {/* Chat Messages */}
-      <ScrollArea ref={scrollAreaRef} className="flex-1 p-4">
+      <ScrollArea ref={scrollAreaRef} className="flex-1 px-3 py-2">
         <div className="space-y-4">
           {messages.map((message) => (
             <div
@@ -260,7 +260,7 @@ export function ChatInterface({
       </ScrollArea>
 
       {/* Chat Input */}
-      <div className="p-4 border-t border-border">
+      <div className="px-4 py-4 border-t border-border">
         <div className="flex gap-2">
           <Input
             value={inputValue}

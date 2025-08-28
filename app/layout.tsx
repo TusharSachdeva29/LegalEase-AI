@@ -4,6 +4,7 @@ import { Inter, Roboto } from "next/font/google"
 import "./globals.css"
 import AuthGuard from "@/components/AuthGuard"
 import { ThemeProvider } from "@/components/theme-provider"
+import { WithSidebar } from "@/components/leftsidebar"
 
 const inter = Inter({
   subsets: ["latin"],
@@ -29,7 +30,9 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
     <html lang="en" className={`${inter.variable} ${roboto.variable} antialiased`}>
       <body className="font-sans">
         <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
-          <AuthGuard>{children}</AuthGuard>
+          <AuthGuard>
+            <WithSidebar>{children}</WithSidebar>
+          </AuthGuard>
         </ThemeProvider>
       </body>
     </html>

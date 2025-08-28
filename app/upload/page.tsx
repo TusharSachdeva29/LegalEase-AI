@@ -147,24 +147,24 @@ export default function UploadPage() {
   return (
     <div className="min-h-screen bg-gradient-to-b from-background to-background/95">
       <Navbar />
-      <div className="pt-4 pl-4">
+      <div className="pt-4 pr-4 flex justify-end">
         <Link
-        href="/dashboard"
-        className="inline-flex items-center text-muted-foreground hover:text-primary transition-all duration-300 hover:scale-105 bg-white/5 px-4 py-2 rounded-full backdrop-blur-sm border border-primary/10"
-      >
-        <ArrowLeft className="h-4 w-4 mr-2" />
-        Back to Dashboard
-      </Link>
+          href="/dashboard"
+          className="inline-flex items-center text-muted-foreground hover:text-primary transition-all duration-300 hover:scale-105 bg-white/5 px-4 py-2 rounded-full backdrop-blur-sm border border-primary/10"
+        >
+          <ArrowLeft className="h-4 w-4 mr-2" />
+          Back to Dashboard
+        </Link>
       </div>
 
       <main className="px-4 sm:px-6 lg:px-8">
         <div className="max-w-4xl mx-auto">
           {/* Header */}
           <div className="text-center mb-12 space-y-6">
-            <h1 className="text-4xl sm:text-5xl font-serif font-bold bg-clip-text text-transparent bg-gradient-to-r from-primary to-primary/80 mb-4">
+            <h1 className="text-3xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-primary to-primary/80 mb-4 leading-tight">
               Upload Your Legal Document
             </h1>
-            <p className="text-lg text-muted-foreground/90 max-w-2xl mx-auto leading-relaxed">
+            <p className="text-md text-muted-foreground/90 max-w-2xl mx-auto leading-relaxed">
               Upload your contract, agreement, or terms of service to get
               instant AI-powered analysis and plain-English explanations.
             </p>
@@ -353,7 +353,7 @@ export default function UploadPage() {
           </div>
 
           {/* File Requirements */}
-          <Card className="p-6">
+          <Card className="p-6 mb-10">
             <h3 className="text-lg font-semibold text-foreground mb-4">
               Supported File Types
             </h3>
