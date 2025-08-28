@@ -110,7 +110,7 @@ export function Navbar() {
               <>
                 <Link href="/signin">
                   <Button 
-                    className="relative group/btn overflow-hidden bg-gradient-to-r from-primary to-accent hover:opacity-90 text-white font-medium px-4 py-4 h-auto rounded-xl shadow-lg transition-all duration-300 border-0"
+                    className="relative group/btn overflow-hidden bg-gradient-to-r from-primary to-accent hover:opacity-90 text-white font-medium px-4 py-3 h-auto rounded-xl shadow-lg transition-all duration-300 border-0"
                   >
                     <div className="absolute inset-0 bg-white/20 group-hover/btn:translate-y-0 transition-transform duration-500"></div>
                     <span className="relative">Get Started</span>

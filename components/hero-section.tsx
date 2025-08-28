@@ -16,7 +16,7 @@ export function HeroSection() {
   }
 
   return (
-    <section className="min-h-screen py-24 px-4 sm:px-6 lg:px-8 relative overflow-hidden">
+    <section className="min-h-screen py-15 px-4 sm:px-6 lg:px-8 relative overflow-hidden">
       {/* Animated Background */}
       <div className="absolute inset-0 bg-[linear-gradient(to_right,#80808012_1px,transparent_1px),linear-gradient(to_bottom,#80808012_1px,transparent_1px)] bg-[size:24px_24px]"></div>
       <div className="absolute inset-0 bg-gradient-to-br from-primary/[0.07] via-accent/[0.05] to-background"></div>
@@ -29,7 +29,7 @@ export function HeroSection() {
         {/* Hero Content */}
         <div className="text-center">
           {/* AI Badge */}
-          <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-gradient-to-r from-primary/10 to-accent/10 border border-primary/20 mb-8 hover:scale-105 transition-transform duration-300">
+          <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-gradient-to-r from-primary/10 to-accent/10 border border-primary/20 mb-10 hover:scale-105 transition-transform duration-300">
             <Sparkles className="h-4 w-4 text-primary animate-pulse" />
             <span className="text-sm font-medium text-primary">Powered by Google's Advanced AI</span>
           </div>
@@ -53,11 +53,11 @@ export function HeroSection() {
           </p>
 
           {/* CTA Buttons */}
-          <div className="flex flex-col sm:flex-row gap-6 justify-center items-center">
+          <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
             <Button
               size="lg"
               onClick={handleUploadClick}
-              className="relative group bg-gradient-to-r from-primary to-accent hover:opacity-90 text-white text-lg px-12 py-7 h-auto rounded-2xl shadow-lg transition-all duration-300 border-0 overflow-hidden"
+              className="relative group bg-gradient-to-r from-primary to-accent hover:opacity-90 text-white text-base px-8 py-4 h-auto rounded-xl shadow-md transition-all duration-300 border-0 overflow-hidden"
             >
               <div className="absolute inset-0 bg-white/20 transition-transform duration-500"></div>
               Upload Your Document
@@ -65,7 +65,7 @@ export function HeroSection() {
             <Button
               variant="outline"
               size="lg"
-              className="text-lg px-8 py-7 h-auto rounded-2xl border-2 border-primary/20 hover:border-primary/40 hover:bg-primary/5 transition-all duration-300 bg-transparent group"
+              className="text-base px-8 py-4 h-auto rounded-xl border-2 border-primary/20 hover:border-primary/40 hover:bg-primary/5 transition-all duration-300 bg-transparent group"
             >
               <span className="bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent group-hover:text-primary transition-colors duration-300">
                 Watch Demo
@@ -74,7 +74,7 @@ export function HeroSection() {
           </div>
 
           {/* Stats Section */}
-          <div className="mt-16 grid grid-cols-2 md:grid-cols-4 gap-8 max-w-4xl mx-auto px-4">
+          <div className="mt-24 grid grid-cols-2 md:grid-cols-4 gap-8 max-w-4xl mx-auto px-4">
             <div className="space-y-2">
               <div className="text-3xl font-bold text-primary">99%</div>
               <div className="text-sm text-muted-foreground">Accuracy Rate</div>
@@ -356,7 +356,7 @@ export function HeroSection() {
           <Button
             size="lg"
             onClick={handleUploadClick}
-            className="relative group bg-gradient-to-r from-primary to-accent hover:opacity-90 text-white text-lg px-12 py-7 h-auto rounded-2xl shadow-lg transition-all duration-300 border-0 mt-8"
+            className="relative group bg-gradient-to-r from-primary to-accent hover:opacity-90 text-white text-base px-8 py-4 h-auto rounded-xl shadow-md transition-all duration-300 border-0 overflow-hidden"
           >
             Try It Now - It's Free
           </Button>

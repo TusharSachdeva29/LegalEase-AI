@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { getAuth, onAuthStateChanged, User } from "firebase/auth";
 import firebaseApp from "@/lib/firebase";
 import { Navbar } from "@/components/navbar";
+import { LeftSidebar } from "@/components/leftsidebar";
 import { Footer } from "@/components/footer";
 import { Button } from "@/components/ui/button";
 import {
@@ -105,338 +106,241 @@ export default function DashboardPage() {
   const isLawyer = userProfile.userType === "lawyer";
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-background to-background/95">
-      <Navbar />
-
-      <main className="py-8 px-4 sm:px-6 lg:px-8">
-        <div className="max-w-7xl mx-auto">
-          {/* Welcome Header */}
-          <div className="mb-10">
-            <div className="flex items-center justify-between bg-white/5 p-6 rounded-xl backdrop-blur-sm border border-primary/10">
-              <div>
-                <h1 className="text-4xl font-serif font-bold bg-clip-text text-transparent bg-gradient-to-r from-primary to-primary/80">
-                  Welcome back, {user.displayName || "User"}
-                </h1>
-                <div className="flex items-center space-x-2 mt-2">
-                  <Badge variant={isLawyer ? "default" : "secondary"}>
-                    {isLawyer ? "Lawyer" : "Client"}
-                  </Badge>
-                  <span className="text-muted-foreground">•</span>
-                  <span className="text-muted-foreground">
-                    Member since{" "}
-                    {new Date(userProfile.createdAt).toLocaleDateString()}
-                  </span>
-                </div>
-              </div>
-              {user.photoURL && (
-                <img
-                  src={user.photoURL}
-                  alt={user.displayName || "User"}
-                  className="w-16 h-16 rounded-full border-2 border-primary/20"
-                />
-              )}
-            </div>
-          </div>
-
-          {/* Quick Stats */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-10">
-            <Card className="group transition-all duration-300 hover:shadow-xl hover:shadow-primary/5 hover:border-primary/20">
-              <CardContent className="p-6">
-                <div className="flex items-center space-x-4">
-                  <div className="p-3 bg-primary/10 rounded-lg transition-transform duration-300 group-hover:scale-110">
-                    <FileText className="h-6 w-6 text-primary" />
-                  </div>
-                  <div>
-                    <p className="text-sm text-muted-foreground font-medium">
-                      Documents Analyzed
-                    </p>
-                    <p className="text-2xl font-bold text-primary">
-                      {documentHistory.length}
-                    </p>
+    <div className="min-h-screen bg-gradient-to-b from-background to-background/95 flex">
+      {/* Left Sidebar */}
+      <div className="z-50">
+        <LeftSidebar userId={user.uid} />
+      </div>
+      <div className="flex-1 flex flex-col min-h-screen">
+        <Navbar />
+        <main className="py-8 px-4 sm:px-6 lg:px-8">
+          <div className="max-w-7xl mx-auto">
+            {/* Welcome Header */}
+            <div className="mb-10">
+              <div className="flex items-center justify-between bg-white/5 p-6 rounded-xl backdrop-blur-sm border border-primary/10">
+                <div>
+                  <h1 className="text-4xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-primary to-primary/80">
+                    Welcome back, {user.displayName || "User"}
+                  </h1>
+                  <div className="flex items-center space-x-2 mt-2">
+                    <Badge variant={isLawyer ? "default" : "secondary"}>
+                      {isLawyer ? "Lawyer" : "Client"}
+                    </Badge>
+                    <span className="text-muted-foreground">•</span>
+                    <span className="text-muted-foreground">
+                      Member since{" "}
+                      {new Date(userProfile.createdAt).toLocaleDateString()}
+                    </span>
                   </div>
                 </div>
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardContent className="p-6">
-                <div className="flex items-center space-x-4">
-                  <div className="p-3 bg-green-500/10 rounded-lg">
-                    <CheckCircle className="h-6 w-6 text-green-600" />
-                  </div>
-                  <div>
-                    <p className="text-sm text-muted-foreground">
-                      Completed Reviews
-                    </p>
-                    <p className="text-2xl font-bold">
-                      {
-                        documentHistory.filter((d) => d.status === "analyzed")
-                          .length
-                      }
-                    </p>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardContent className="p-6">
-                <div className="flex items-center space-x-4">
-                  <div className="p-3 bg-blue-500/10 rounded-lg">
-                    <TrendingUp className="h-6 w-6 text-blue-600" />
-                  </div>
-                  <div>
-                    <p className="text-sm text-muted-foreground">
-                      {isLawyer ? "Cases Handled" : "Legal Insights"}
-                    </p>
-                    <p className="text-2xl font-bold">
-                      {documentHistory.length * (isLawyer ? 3 : 2)}
-                    </p>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          </div>
-
-          {/* Main Action Cards */}
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-10">
-            {/* Upload Document */}
-            <Card className="group hover:shadow-xl hover:shadow-primary/10 transition-all duration-300 hover:border-primary/20 backdrop-blur-sm">
-              <CardHeader className="space-y-4">
-                <div className="flex items-center space-x-4">
-                  <div className="p-3 bg-gradient-to-br from-primary/20 to-primary/10 rounded-lg transition-transform duration-300 group-hover:scale-110">
-                    <Upload className="h-8 w-8 text-primary" />
-                  </div>
-                  <div>
-                    <CardTitle className="text-xl font-semibold bg-clip-text text-transparent bg-gradient-to-r from-primary to-primary/80">Upload Document</CardTitle>
-                    <CardDescription className="text-muted-foreground/90">
-                      {isLawyer
-                        ? "Analyze contracts and legal documents for your clients"
-                        : "Upload your legal documents for AI-powered analysis"}
-                    </CardDescription>
-                  </div>
-                </div>
-              </CardHeader>
-              <CardContent>
-                <Link href="/upload" className="block">
-                  <Button className="w-full bg-gradient-to-r from-primary to-primary/90 hover:from-primary/90 hover:to-primary transition-all duration-300 shadow-lg shadow-primary/20 hover:shadow-primary/30">Start New Analysis</Button>
-                </Link>
-              </CardContent>
-            </Card>
-
-            {/* Legal Chat */}
-            <Card className="hover:shadow-lg transition-shadow">
-              <CardHeader>
-                <div className="flex items-center space-x-4">
-                  <div className="p-3 bg-blue-500/10 rounded-lg">
-                    <MessageCircle className="h-8 w-8 text-blue-600" />
-                  </div>
-                  <div>
-                    <CardTitle>Legal Chat Assistant</CardTitle>
-                    <CardDescription>
-                      {isLawyer
-                        ? "Get quick legal research and case law insights"
-                        : "Ask questions about legal matters and get expert guidance"}
-                    </CardDescription>
-                  </div>
-                </div>
-              </CardHeader>
-              <CardContent>
-                <Link href="/chat">
-                  <Button variant="outline" className="w-full">
-                    Start Conversation
-                  </Button>
-                </Link>
-              </CardContent>
-            </Card>
-
-            {/* Clause Analysis */}
-            <Card className="hover:shadow-lg transition-shadow">
-              <CardHeader>
-                <div className="flex items-center space-x-4">
-                  <div className="p-3 bg-green-500/10 rounded-lg">
-                    <FileText className="h-8 w-8 text-green-600" />
-                  </div>
-                  <div>
-                    <CardTitle>Clause Analysis</CardTitle>
-                    <CardDescription>
-                      {isLawyer
-                        ? "Deep dive into contract clauses and identify potential issues"
-                        : "Understand complex legal clauses in plain language"}
-                    </CardDescription>
-                  </div>
-                </div>
-              </CardHeader>
-              <CardContent>
-                <Link href="/clauses">
-                  <Button variant="outline" className="w-full">
-                    Analyze Clauses
-                  </Button>
-                </Link>
-              </CardContent>
-            </Card>
-
-            {/* Document History */}
-            <Card className="hover:shadow-lg transition-shadow">
-              <CardHeader>
-                <div className="flex items-center space-x-4">
-                  <div className="p-3 bg-purple-500/10 rounded-lg">
-                    <History className="h-8 w-8 text-purple-600" />
-                  </div>
-                  <div>
-                    <CardTitle>Document History</CardTitle>
-                    <CardDescription>
-                      Access all your previously analyzed documents and reports
-                    </CardDescription>
-                  </div>
-                </div>
-              </CardHeader>
-              <CardContent>
-                <Button variant="outline" className="w-full">
-                  View History ({documentHistory.length})
-                </Button>
-              </CardContent>
-            </Card>
-          </div>
-
-          {/* Recent Activity */}
-          <Card className="hover:shadow-lg transition-all duration-300 border border-primary/10">
-            <CardHeader>
-              <div className="flex items-center justify-between">
-                <div className="flex items-center space-x-3">
-                  <div className="p-2 bg-gradient-to-br from-primary/20 to-primary/10 rounded-lg">
-                    <Clock className="h-5 w-5 text-primary" />
-                  </div>
-                  <CardTitle className="text-xl font-semibold bg-clip-text text-transparent bg-gradient-to-r from-primary to-primary/80">Recent Activity</CardTitle>
-                </div>
-                {documentHistory.length > 3 && (
-                  <Button variant="ghost" size="sm" className="hover:text-primary transition-colors">
-                    View All
-                  </Button>
+                {user.photoURL && (
+                  <img
+                    src={user.photoURL}
+                    alt={user.displayName || "User"}
+                    className="w-16 h-16 rounded-full border-2 border-primary/20"
+                  />
                 )}
               </div>
-            </CardHeader>
-            <CardContent>
-              {documentHistory.length === 0 ? (
-                <div className="text-center py-12 px-6">
-                  <div className="p-4 bg-gradient-to-br from-primary/20 to-primary/5 rounded-full w-fit mx-auto mb-6">
-                    <FileText className="h-12 w-12 text-primary mx-auto" />
+            </div>
+
+            {/* Quick Stats */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-10">
+              <Card className="group transition-all duration-300 hover:shadow-xl hover:shadow-primary/5 hover:border-primary/20">
+                <CardContent className="p-6">
+                  <div className="flex items-center space-x-4">
+                    <div className="p-3 bg-primary/10 rounded-lg transition-transform duration-300 group-hover:scale-110">
+                      <FileText className="h-6 w-6 text-primary" />
+                    </div>
+                    <div>
+                      <p className="text-sm text-muted-foreground font-medium">
+                        Documents Analyzed
+                      </p>
+                      <p className="text-2xl font-bold text-primary">
+                        {documentHistory.length}
+                      </p>
+                    </div>
                   </div>
-                  <p className="text-lg font-medium text-primary/80 mb-2">
-                    No documents analyzed yet
-                  </p>
-                  <p className="text-sm text-muted-foreground mb-6">
-                    Upload your first document to get started
-                  </p>
-                  <Link href="/upload">
-                    <Button className="bg-gradient-to-r from-primary to-primary/90 hover:from-primary/90 hover:to-primary transition-all duration-300 shadow-lg shadow-primary/20 hover:shadow-primary/30">
-                      Upload Document
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardContent className="p-6">
+                  <div className="flex items-center space-x-4">
+                    <div className="p-3 bg-green-500/10 rounded-lg">
+                      <CheckCircle className="h-6 w-6 text-green-600" />
+                    </div>
+                    <div>
+                      <p className="text-sm text-muted-foreground">
+                        Completed Reviews
+                      </p>
+                      <p className="text-2xl font-bold">
+                        {
+                          documentHistory.filter((d) => d.status === "analyzed")
+                            .length
+                        }
+                      </p>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardContent className="p-6">
+                  <div className="flex items-center space-x-4">
+                    <div className="p-3 bg-blue-500/10 rounded-lg">
+                      <TrendingUp className="h-6 w-6 text-blue-600" />
+                    </div>
+                    <div>
+                      <p className="text-sm text-muted-foreground">
+                        {isLawyer ? "Cases Handled" : "Legal Insights"}
+                      </p>
+                      <p className="text-2xl font-bold">
+                        {documentHistory.length * (isLawyer ? 3 : 2)}
+                      </p>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+
+            {/* Recent Activity */}
+            <Card className="hover:shadow-lg transition-all duration-300 border border-primary/10">
+              <CardHeader>
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center space-x-3">
+                    <div className="p-2 bg-gradient-to-br from-primary/20 to-primary/10 rounded-lg">
+                      <Clock className="h-5 w-5 text-primary" />
+                    </div>
+                    <CardTitle className="text-xl font-semibold bg-clip-text text-transparent bg-gradient-to-r from-primary to-primary/80">Recent Activity</CardTitle>
+                  </div>
+                  {documentHistory.length > 3 && (
+                    <Button variant="ghost" size="sm" className="hover:text-primary transition-colors">
+                      View All
                     </Button>
-                  </Link>
+                  )}
                 </div>
-              ) : (
-                <div className="space-y-4">
-                  {documentHistory.slice(0, 3).map((doc) => (
-                    <div
-                      key={doc.id}
-                      className="flex items-center justify-between p-4 bg-gradient-to-r from-white/5 to-transparent hover:from-white/10 border border-primary/10 rounded-lg transition-all duration-300 group cursor-pointer"
-                    >
-                      <div className="flex items-center space-x-4">
-                        <div
-                          className={`p-2 rounded-lg transition-transform duration-300 group-hover:scale-110 ${
-                            doc.status === "analyzed"
-                              ? "bg-gradient-to-br from-green-500/20 to-green-500/10"
-                              : doc.status === "pending"
-                              ? "bg-gradient-to-br from-yellow-500/20 to-yellow-500/10"
-                              : "bg-gradient-to-br from-red-500/20 to-red-500/10"
-                          }`}
-                        >
-                          <FileText
-                            className={`h-4 w-4 ${
+              </CardHeader>
+              <CardContent>
+                {documentHistory.length === 0 ? (
+                  <div className="text-center py-12 px-6">
+                    <div className="p-4 bg-gradient-to-br from-primary/20 to-primary/5 rounded-full w-fit mx-auto mb-6">
+                      <FileText className="h-12 w-12 text-primary mx-auto" />
+                    </div>
+                    <p className="text-lg font-medium text-primary/80 mb-2">
+                      No documents analyzed yet
+                    </p>
+                    <p className="text-sm text-muted-foreground mb-6">
+                      Upload your first document to get started
+                    </p>
+                    <Link href="/upload">
+                      <Button className="bg-gradient-to-r from-primary to-primary/90 hover:from-primary/90 hover:to-primary transition-all duration-300 shadow-lg shadow-primary/20 hover:shadow-primary/30">
+                        Upload Document
+                      </Button>
+                    </Link>
+                  </div>
+                ) : (
+                  <div className="space-y-4">
+                    {documentHistory.slice(0, 3).map((doc) => (
+                      <div
+                        key={doc.id}
+                        className="flex items-center justify-between p-4 bg-gradient-to-r from-white/5 to-transparent hover:from-white/10 border border-primary/10 rounded-lg transition-all duration-300 group cursor-pointer"
+                      >
+                        <div className="flex items-center space-x-4">
+                          <div
+                            className={`p-2 rounded-lg transition-transform duration-300 group-hover:scale-110 ${
                               doc.status === "analyzed"
-                                ? "text-green-500"
+                                ? "bg-gradient-to-br from-green-500/20 to-green-500/10"
                                 : doc.status === "pending"
-                                ? "text-yellow-500"
-                                : "text-red-500"
+                                ? "bg-gradient-to-br from-yellow-500/20 to-yellow-500/10"
+                                : "bg-gradient-to-br from-red-500/20 to-red-500/10"
                             }`}
-                          />
+                          >
+                            <FileText
+                              className={`h-4 w-4 ${
+                                doc.status === "analyzed"
+                                  ? "text-green-500"
+                                  : doc.status === "pending"
+                                  ? "text-yellow-500"
+                                  : "text-red-500"
+                              }`}
+                            />
+                          </div>
+                          <div>
+                            <p className="font-medium text-foreground/90 group-hover:text-primary transition-colors">{doc.name}</p>
+                            <p className="text-sm text-muted-foreground">
+                              {doc.type} •{" "}
+                              {new Date(doc.uploadDate).toLocaleDateString()}
+                            </p>
+                          </div>
+                        </div>
+                        <Badge
+                          variant={doc.status === "analyzed" ? "default" : "secondary"}
+                          className="transition-transform duration-300 group-hover:scale-105"
+                        >
+                          {doc.status}
+                        </Badge>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+
+            {/* Lawyer-specific section */}
+            {isLawyer && (
+              <div className="mt-10">
+                <h2 className="text-2xl font-semibold mb-6 bg-clip-text text-transparent bg-gradient-to-r from-primary to-primary/80">
+                  Professional Tools
+                </h2>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <Card className="group hover:shadow-xl hover:shadow-primary/10 transition-all duration-300 hover:border-primary/20 backdrop-blur-sm">
+                    <CardHeader>
+                      <div className="flex items-center space-x-4">
+                        <div className="p-3 bg-gradient-to-br from-indigo-500/20 to-indigo-500/10 rounded-lg transition-transform duration-300 group-hover:scale-110">
+                          <Users className="h-6 w-6 text-indigo-500" />
                         </div>
                         <div>
-                          <p className="font-medium text-foreground/90 group-hover:text-primary transition-colors">{doc.name}</p>
-                          <p className="text-sm text-muted-foreground">
-                            {doc.type} •{" "}
-                            {new Date(doc.uploadDate).toLocaleDateString()}
-                          </p>
+                          <CardTitle className="text-xl font-semibold text-indigo-500/90">Client Portal</CardTitle>
+                          <CardDescription>
+                            Manage your client documents and cases
+                          </CardDescription>
                         </div>
                       </div>
-                      <Badge
-                        variant={doc.status === "analyzed" ? "default" : "secondary"}
-                        className="transition-transform duration-300 group-hover:scale-105"
-                      >
-                        {doc.status}
-                      </Badge>
-                    </div>
-                  ))}
+                    </CardHeader>
+                    <CardContent>
+                      <Button variant="outline" className="w-full hover:bg-indigo-500/10 hover:text-indigo-500 transition-all duration-300">
+                        Access Client Portal
+                      </Button>
+                    </CardContent>
+                  </Card>
+
+                  <Card>
+                    <CardHeader>
+                      <div className="flex items-center space-x-4">
+                        <div className="p-3 bg-orange-500/10 rounded-lg">
+                          <BookOpen className="h-6 w-6 text-orange-600" />
+                        </div>
+                        <div>
+                          <CardTitle>Legal Research</CardTitle>
+                          <CardDescription>
+                            Advanced case law and precedent research
+                          </CardDescription>
+                        </div>
+                      </div>
+                    </CardHeader>
+                    <CardContent>
+                      <Button variant="outline" className="w-full">
+                        Start Research
+                      </Button>
+                    </CardContent>
+                  </Card>
                 </div>
-              )}
-            </CardContent>
-          </Card>
-
-          {/* Lawyer-specific section */}
-          {isLawyer && (
-            <div className="mt-10">
-              <h2 className="text-2xl font-semibold mb-6 bg-clip-text text-transparent bg-gradient-to-r from-primary to-primary/80">
-                Professional Tools
-              </h2>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <Card className="group hover:shadow-xl hover:shadow-primary/10 transition-all duration-300 hover:border-primary/20 backdrop-blur-sm">
-                  <CardHeader>
-                    <div className="flex items-center space-x-4">
-                      <div className="p-3 bg-gradient-to-br from-indigo-500/20 to-indigo-500/10 rounded-lg transition-transform duration-300 group-hover:scale-110">
-                        <Users className="h-6 w-6 text-indigo-500" />
-                      </div>
-                      <div>
-                        <CardTitle className="text-xl font-semibold text-indigo-500/90">Client Portal</CardTitle>
-                        <CardDescription>
-                          Manage your client documents and cases
-                        </CardDescription>
-                      </div>
-                    </div>
-                  </CardHeader>
-                  <CardContent>
-                    <Button variant="outline" className="w-full hover:bg-indigo-500/10 hover:text-indigo-500 transition-all duration-300">
-                      Access Client Portal
-                    </Button>
-                  </CardContent>
-                </Card>
-
-                <Card>
-                  <CardHeader>
-                    <div className="flex items-center space-x-4">
-                      <div className="p-3 bg-orange-500/10 rounded-lg">
-                        <BookOpen className="h-6 w-6 text-orange-600" />
-                      </div>
-                      <div>
-                        <CardTitle>Legal Research</CardTitle>
-                        <CardDescription>
-                          Advanced case law and precedent research
-                        </CardDescription>
-                      </div>
-                    </div>
-                  </CardHeader>
-                  <CardContent>
-                    <Button variant="outline" className="w-full">
-                      Start Research
-                    </Button>
-                  </CardContent>
-                </Card>
               </div>
-            </div>
-          )}
-        </div>
-      </main>
-
-      <Footer />
+            )}
+          </div>
+        </main>
+        <Footer />
+      </div>
     </div>
   );
 }
