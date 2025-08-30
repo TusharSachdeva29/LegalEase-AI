@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>LegalEase Meet Assistant</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <div class="container">
+    <header>
+      <h1>LegalEase Meet Assistant</h1>
+    </header>
+    
+    <div class="status-container">
+      <div class="status">
+        <span>Connection Status:</span>
+        <span id="connection-status" class="status-indicator">Checking...</span>
+      </div>
+      <div class="status">
+        <span>Transcription:</span>
+        <span id="transcription-status" class="status-indicator">Inactive</span>
+      </div>
+    </div>
+    
+    <div class="controls">
+      <button id="connect-button" class="btn primary">Connect to Server</button>
+      <button id="toggle-transcription" class="btn secondary" disabled>Start Transcription</button>
+    </div>
+    
+    <div class="settings">
+      <h2>Settings</h2>
+      <label class="setting">
+        <input type="checkbox" id="auto-connect">
+        Auto-connect on startup
+      </label>
+      <label class="setting">
+        <input type="checkbox" id="show-transcript">
+        Show transcript on screen
+      </label>
+    </div>
+    
+    <div class="info">
+      <p><strong>Server URL:</strong> <span id="server-url">ws://localhost:3000/api/websocket</span></p>
+      <p>For the best transcription quality, speak clearly and minimize background noise.</p>
+    </div>
+    
+    <div id="error-details" class="error-container" style="display: none;">
+      <!-- Error details will be shown here -->
+    </div>
+    
+    <div class="troubleshooting">
+      <p><strong>Having issues?</strong> <button id="show-troubleshooting" class="link-button">View troubleshooting tips</button></p>
+    </div>
+    
+    <footer>
+      <p>LegalEase Meet Assistant v1.0.0</p>
+    </footer>
+  </div>
+  <script src="popup.js"></script>
+</body>
+</html>

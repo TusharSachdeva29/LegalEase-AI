@@ -1,0 +1,43 @@
+{
+  "manifest_version": 3,
+  "name": "LegalEase Meet Assistant",
+  "version": "1.0.0",
+  "description": "AI assistant for Google Meet that provides legal insights during meetings",
+  "permissions": [
+    "activeTab",
+    "tabCapture",
+    "storage",
+    "scripting"
+  ],
+  "host_permissions": [
+    "https://meet.google.com/*",
+    "http://localhost:3000/*"
+  ],
+  "background": {
+    "page": "background.html"
+  },
+  "content_scripts": [
+    {
+      "matches": ["https://meet.google.com/*"],
+      "js": ["content.js"]
+    }
+  ],
+  "web_accessible_resources": [{
+    "resources": ["popup.html", "popup.js", "styles.css"],
+    "matches": ["https://meet.google.com/*"]
+  }],
+  "action": {
+    "default_popup": "popup.html",
+    "default_icon": {
+      "16": "icons/icon16.png",
+      "48": "icons/icon48.png",
+      "128": "icons/icon128.png"
+    },
+    "default_title": "LegalEase Meet Assistant"
+  },
+  "icons": {
+    "16": "icons/icon16.png",
+    "48": "icons/icon48.png",
+    "128": "icons/icon128.png"
+  }
+}

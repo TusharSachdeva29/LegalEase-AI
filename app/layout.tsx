@@ -5,6 +5,7 @@ import "./globals.css"
 import AuthGuard from "@/components/AuthGuard"
 import { ThemeProvider } from "@/components/theme-provider"
 import { WithSidebar } from "@/components/leftsidebar"
+import { Toaster } from "@/components/ui/toaster"
 
 const inter = Inter({
   subsets: ["latin"],
@@ -33,6 +34,7 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
           <AuthGuard>
             <WithSidebar>{children}</WithSidebar>
           </AuthGuard>
+          <Toaster />
         </ThemeProvider>
       </body>
     </html>
