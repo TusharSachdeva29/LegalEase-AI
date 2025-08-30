@@ -12,7 +12,7 @@ import {
 import firebaseApp from "@/lib/firebase";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Menu, X } from "lucide-react";
+import { Menu, X, Video } from "lucide-react";
 import Link from "next/link";
 
 export function Navbar() {
@@ -78,6 +78,15 @@ export function Navbar() {
           <div className="hidden md:flex items-center space-x-6">
             {user ? (
               <>
+                <Link href="/meet">
+                  <Button
+                    variant="outline"
+                    className="flex items-center space-x-2 border-2 border-green-500/20 hover:border-green-500/40 hover:bg-green-500/5 text-green-700 hover:text-green-800 transition-all duration-300"
+                  >
+                    <Video className="h-4 w-4" />
+                    <span>Start Meeting</span>
+                  </Button>
+                </Link>
                 <div className="flex items-center space-x-3 group">
                   <div className="relative">
                     <div className="absolute -inset-1 bg-gradient-to-r from-primary/20 to-accent/20 rounded-full blur opacity-0 group-hover:opacity-100 transition duration-500"></div>
@@ -157,6 +166,15 @@ export function Navbar() {
                           {user.displayName || user.email}
                         </span>
                       </div>
+                      <Link href="/meet" className="w-full">
+                        <Button
+                          variant="outline"
+                          className="w-full justify-start text-green-700 hover:text-green-800 border-green-500/20"
+                        >
+                          <Video className="h-4 w-4 mr-2" />
+                          Start Meeting
+                        </Button>
+                      </Link>
                       <Button
                         variant="ghost"
                         className="justify-start text-foreground hover:text-primary"

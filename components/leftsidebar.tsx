@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
-import { Upload, MessageCircle, FileText, History, User as UserIcon, LayoutDashboard } from "lucide-react";
+import { Upload, MessageCircle, FileText, History, User as UserIcon, LayoutDashboard, Video } from "lucide-react";
 import { usePathname } from "next/navigation";
 import {
 	getAuth,
@@ -38,6 +38,11 @@ const sidebarOptions = [
 		name: "Clause Analysis",
 		icon: FileText,
 		href: "/clauses",
+	},
+	{
+		name: "Start Meeting",
+		icon: Video,
+		href: "/meet",
 	},
 	{
 		name: "Document History",
