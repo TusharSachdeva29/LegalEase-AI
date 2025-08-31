@@ -7,12 +7,33 @@ const SERVER_URL = 'http://localhost:3000';
 // Test WebSocket server availability before connecting
 async function testWebSocketServer() {
   try {
+    console.log('Testing WebSocket server availability...');
     const response = await fetch(`${SERVER_URL}/api/websocket-status`);
+    
+    if (!response.ok) {
+      console.error(`WebSocket server status check failed: HTTP ${response.status}`);
+      return false;
+    }
+    
     const data = await response.json();
     console.log('WebSocket server status:', data);
+    
+    // Store the status in chrome.storage for reference
+    chrome.storage.local.set({ 
+      serverStatus: data,
+      lastServerCheck: Date.now() 
+    });
+    
     return true;
   } catch (error) {
     console.error('Error checking WebSocket server status:', error);
+    
+    // Store the error in chrome.storage
+    chrome.storage.local.set({ 
+      serverStatus: { status: 'error', message: error.message },
+      lastServerCheck: Date.now()
+    });
+    
     return false;
   }
 }
@@ -35,11 +56,15 @@ async function connectWebSocket() {
   }
 
   // Socket.IO is already loaded from background.html
+  console.log('Attempting to connect to WebSocket server at:', SERVER_URL);
   socket = io(SERVER_URL, {
     path: '/api/websocket',
     reconnectionAttempts: 5,
     reconnectionDelay: 1000,
-    transports: ['websocket', 'polling'] // Try WebSocket first, fall back to polling
+    transports: ['websocket', 'polling'], // Try WebSocket first, fall back to polling
+    extraHeaders: {
+      'Origin': 'chrome-extension://legalease'
+    }
   });
   
   socket.on('connect', () => {
@@ -93,14 +118,63 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   
   if (message.action === 'send-transcript') {
     if (socket && socket.connected) {
-      socket.emit('transcript', {
+      console.log('Sending transcript to server. Socket connected:', socket.connected);
+      console.log('Meeting ID:', message.meetingId);
+      console.log('Text length:', message.text.length);
+      
+      // Add timestamp to the transcript data
+      const transcriptData = {
         text: message.text,
         meetingId: message.meetingId,
         timestamp: Date.now()
+      };
+      
+      // Set up a timeout for the acknowledgment
+      const timeoutPromise = new Promise((resolve) => {
+        setTimeout(() => {
+          resolve({ status: 'timeout', message: 'Server acknowledgment timed out' });
+        }, 3000);
       });
+      
+      // Set up the socket acknowledgment
+      const socketPromise = new Promise((resolve) => {
+        socket.emit('transcript', transcriptData, (acknowledgment) => {
+          // This callback will be called when the server acknowledges
+          console.log('Server acknowledged transcript:', acknowledgment);
+          resolve({ status: 'acknowledged', data: acknowledgment });
+        });
+        
+        // Also listen for the transcript-received event as fallback
+        socket.once('transcript-received', (data) => {
+          console.log('Server confirmed transcript receipt via event:', data);
+          resolve({ status: 'received', data });
+        });
+      });
+      
+      // Race between the timeout and socket acknowledgment
+      Promise.race([socketPromise, timeoutPromise])
+        .then((result) => {
+          if (result.status === 'timeout') {
+            console.warn('Socket.IO acknowledgment timed out, falling back to HTTP');
+            // Fall back to HTTP POST
+            sendTranscriptOverHttp(transcriptData);
+          }
+        });
+      
       sendResponse({ status: 'sent' });
     } else {
-      sendResponse({ status: 'not-connected' });
+      console.warn('Cannot send transcript - socket not connected');
+      connectWebSocket(); // Try to reconnect
+      
+      // Fall back to HTTP POST immediately
+      const transcriptData = {
+        text: message.text,
+        meetingId: message.meetingId,
+        timestamp: Date.now()
+      };
+      sendTranscriptOverHttp(transcriptData);
+      
+      sendResponse({ status: 'not-connected', fallback: 'http' });
     }
     return true;
   }
@@ -134,6 +208,34 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     return true;
   }
 });
+
+// Fallback function to send transcript over HTTP if WebSocket fails
+async function sendTranscriptOverHttp(transcriptData) {
+  try {
+    console.log('Falling back to HTTP for transcript delivery');
+    
+    const response = await fetch(`${SERVER_URL}/api/latest-transcript`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-Client-Version': '1.0',
+        'X-Meeting-ID': transcriptData.meetingId || 'unknown'
+      },
+      body: JSON.stringify(transcriptData)
+    });
+    
+    if (response.ok) {
+      console.log('Successfully sent transcript over HTTP');
+      return true;
+    } else {
+      console.error('Failed to send transcript over HTTP:', response.status);
+      return false;
+    }
+  } catch (error) {
+    console.error('Error sending transcript over HTTP:', error);
+    return false;
+  }
+}
 
 // Initialize: check if we should connect WebSocket at startup
 chrome.storage.local.get(['autoConnect'], (result) => {

@@ -35,10 +35,11 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Show error details if any
     if (result.websocketError) {
-      errorDetailsElement.textContent = `Error: ${result.websocketError}`;
-      errorDetailsElement.style.display = 'block';
+      showError(`Connection Error: ${result.websocketError}`);
+    } else if (result.transcriptionError) {
+      showError(`Recording Error: ${result.transcriptionError}`);
     } else {
-      errorDetailsElement.style.display = 'none';
+      hideError();
     }
   });
   
@@ -112,6 +113,22 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
   
+  // Helper functions for showing/hiding errors
+  function showError(message, isPermissionIssue = false) {
+    errorDetailsElement.innerHTML = message;
+    
+    if (isPermissionIssue) {
+      errorDetailsElement.innerHTML += '<br><br><strong>Solution:</strong> Click the padlock/info icon in the address bar, ' +
+        'then enable microphone access and refresh this page.';
+    }
+    
+    errorDetailsElement.style.display = 'block';
+  }
+  
+  function hideError() {
+    errorDetailsElement.style.display = 'none';
+  }
+
   // Save settings
   autoConnectCheckbox.addEventListener('change', () => {
     chrome.storage.local.set({ autoConnect: autoConnectCheckbox.checked });
@@ -191,6 +208,27 @@ document.addEventListener('DOMContentLoaded', () => {
       isTranscribing = changes.transcriptionActive.newValue;
       updateTranscriptionStatus(isTranscribing ? 'active' : 'inactive');
       toggleTranscriptionButton.textContent = isTranscribing ? 'Stop Transcription' : 'Start Transcription';
+    }
+    
+    if (changes.transcriptionError) {
+      showError(changes.transcriptionError.newValue, changes.requiresPermission?.newValue || false);
+    }
+  });
+  
+  // Listen for messages from content script
+  chrome.runtime.onMessage.addListener((message) => {
+    if (message.action === 'transcription-error') {
+      showError(message.error, message.requiresPermission || false);
+      chrome.storage.local.set({ 
+        transcriptionError: message.error,
+        requiresPermission: message.requiresPermission || false
+      });
+      
+      // Reset transcription status
+      isTranscribing = false;
+      updateTranscriptionStatus('inactive');
+      toggleTranscriptionButton.textContent = 'Start Transcription';
+      chrome.storage.local.set({ transcriptionActive: false });
     }
   });
 });

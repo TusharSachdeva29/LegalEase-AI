@@ -2,11 +2,11 @@
 
 // State variables
 let isTranscribing = false;
-let recognition = null;
+let audioRecorder = null;
 let transcriptBuffer = [];
 let lastTranscriptSent = '';
 let meetingId = '';
-const WORD_LIMIT_BEFORE_SENDING = 10; // Send after collecting 10 new words
+const SERVER_URL = 'http://localhost:3000/api/transcribe';
 
 // Get the meeting ID from the URL
 function getMeetingIdFromUrl() {
@@ -15,115 +15,162 @@ function getMeetingIdFromUrl() {
   return match && match[1] ? match[1] : 'unknown-meeting';
 }
 
-// Initialize Web Speech API for transcription
-function initializeSpeechRecognition() {
-  if (!('webkitSpeechRecognition' in window)) {
-    console.error('Speech recognition not supported in this browser');
-    showNotification('Speech recognition not supported in this browser', 'error');
+// Initialize Google Cloud Speech-to-Text transcription
+function initializeCloudTranscription() {
+  if (!window.AudioRecorder) {
+    console.error('Audio recorder not loaded');
+    showNotification('Audio recorder not loaded', 'error');
     return false;
   }
   
-  recognition = new webkitSpeechRecognition();
-  recognition.continuous = true;
-  recognition.interimResults = true;
-  recognition.lang = 'en-US';
-  
-  recognition.onstart = () => {
-    console.log('Speech recognition started');
-    isTranscribing = true;
-    updateTranscriptionStatus();
-  };
-  
-  recognition.onend = () => {
-    console.log('Speech recognition ended');
-    isTranscribing = false;
-    updateTranscriptionStatus();
+  try {
+    // Create a new audio recorder instance
+    audioRecorder = new window.AudioRecorder();
     
-    // Restart if we're supposed to be transcribing
-    if (isTranscribing) {
-      setTimeout(() => {
-        recognition.start();
-      }, 1000);
-    }
-  };
-  
-  recognition.onerror = (event) => {
-    console.error('Speech recognition error:', event.error);
-    showNotification(`Recognition error: ${event.error}`, 'error');
-  };
-  
-  recognition.onresult = (event) => {
-    let interimTranscript = '';
-    let finalTranscript = '';
+    // Set up the callback for when audio data is available
+    audioRecorder.setOnDataAvailable(audioBlob => {
+      console.log('Audio data available, sending for transcription');
+      sendAudioForTranscription(audioBlob);
+    });
     
-    for (let i = event.resultIndex; i < event.results.length; ++i) {
-      if (event.results[i].isFinal) {
-        finalTranscript += event.results[i][0].transcript;
-      } else {
-        interimTranscript += event.results[i][0].transcript;
-      }
+    return true;
+  } catch (error) {
+    console.error('Error initializing cloud transcription:', error);
+    showNotification('Error initializing transcription', 'error');
+    return false;
+  }
+}
+
+// Send audio to Google Cloud Speech-to-Text via our API
+async function sendAudioForTranscription(audioBlob) {
+  try {
+    // Create a FormData object to send the audio file
+    const formData = new FormData();
+    formData.append('audio', audioBlob, 'audio.webm');
+    
+    // Send the audio to our server
+    const response = await fetch(SERVER_URL, {
+      method: 'POST',
+      body: formData
+    });
+    
+    if (!response.ok) {
+      const errorData = await response.json();
+      console.error('Error from transcription service:', errorData);
+      return;
     }
     
-    if (finalTranscript) {
-      transcriptBuffer.push(finalTranscript);
+    const data = await response.json();
+    
+    if (data.text && data.text.trim() !== '') {
+      // Add the transcribed text to the buffer
+      transcriptBuffer.push(data.text);
       
-      // Get the total words in buffer
+      // Get the total transcript
       const allText = transcriptBuffer.join(' ');
-      const words = allText.split(/\s+/);
       
-      // If we've collected enough new words, send to background
-      if (words.length >= WORD_LIMIT_BEFORE_SENDING && allText !== lastTranscriptSent) {
-        sendTranscriptToBackground(allText);
-        lastTranscriptSent = allText;
-        
-        // Keep the last 200 words in the buffer for context
-        if (words.length > 200) {
-          const last200Words = words.slice(-200).join(' ');
-          transcriptBuffer = [last200Words];
-        }
+      // Send the transcript to the background script
+      sendTranscriptToBackground(allText);
+      lastTranscriptSent = allText;
+      
+      // Keep only the last 500 words for context
+      const words = allText.split(/\s+/);
+      if (words.length > 500) {
+        const last500Words = words.slice(-500).join(' ');
+        transcriptBuffer = [last500Words];
       }
       
+      // Update the UI
       updateTranscriptionDisplay(allText);
     }
-  };
-  
-  return true;
+  } catch (error) {
+    console.error('Error sending audio for transcription:', error);
+    showNotification('Error sending audio for transcription', 'error');
+  }
 }
 
 // Start transcription
-function startTranscription() {
-  if (!recognition && !initializeSpeechRecognition()) {
-    showNotification('Speech recognition initialization failed', 'error');
-    return false;
+// Start transcription
+async function startTranscription() {
+  if (isTranscribing) {
+    console.log('Already transcribing');
+    return true;
   }
   
   try {
     meetingId = getMeetingIdFromUrl();
     console.log('Starting transcription for meeting:', meetingId);
-    recognition.start();
+    
+    // Check if we have microphone permission
+    const permissionStatus = await navigator.permissions.query({ name: 'microphone' });
+    console.log('Microphone permission status:', permissionStatus.state);
+    
+    if (permissionStatus.state === 'denied') {
+      const errorMsg = 'Microphone access denied. Please enable microphone access in your browser settings.';
+      showNotification(errorMsg, 'error');
+      chrome.runtime.sendMessage({
+        action: 'transcription-error',
+        error: errorMsg,
+        requiresPermission: true
+      });
+      return false;
+    }
+    
+    // Initialize cloud transcription - this will request microphone access
+    const initialized = initializeCloudTranscription();
+    if (!initialized) {
+      return false;
+    }
+    
+    // Start the audio recorder
+    const started = await audioRecorder.start();
+    if (!started) {
+      showNotification('Failed to start audio recording', 'error');
+      chrome.runtime.sendMessage({
+        action: 'transcription-error',
+        error: 'Failed to start audio recording'
+      });
+      return false;
+    }
+    
     isTranscribing = true;
+    updateTranscriptionStatus('active');
     showNotification('Transcription started', 'success');
     
-    // Request audio capture from the background script
-    chrome.runtime.sendMessage({ action: 'start-capturing' }, (response) => {
-      if (!response || response.status !== 'success') {
-        showNotification('Failed to capture meeting audio', 'error');
-      }
+    // Send status update to popup
+    chrome.runtime.sendMessage({
+      action: 'transcription-status-update',
+      status: 'active'
     });
+    
+    return true;
   } catch (error) {
     console.error('Error starting transcription:', error);
-    showNotification('Error starting transcription', 'error');
+    showNotification('Error starting transcription: ' + error.message, 'error');
+    
+    // Send error to popup
+    chrome.runtime.sendMessage({
+      action: 'transcription-error',
+      error: error.message
+    });
+    
+    return false;
   }
 }
 
 // Stop transcription
 function stopTranscription() {
-  if (recognition) {
-    recognition.stop();
+  if (audioRecorder) {
+    audioRecorder.stop();
+    audioRecorder = null;
   }
+  
   isTranscribing = false;
   updateTranscriptionStatus();
   showNotification('Transcription stopped', 'info');
+  
+  // Let the background script know we stopped transcribing
+  chrome.runtime.sendMessage({ action: 'transcription-stopped' });
 }
 
 // Send transcript to background script

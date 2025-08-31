@@ -1,4 +1,4 @@
-"use client";
+        "use client";
 
 import { useState, useEffect } from "react";
 import { io, Socket } from "socket.io-client";
@@ -17,8 +17,40 @@ export default function TranscriptReceiver() {
   const [meetingId, setMeetingId] = useState<string>("");
   const [lastUpdate, setLastUpdate] = useState<string>("");
 
+  // Function to fetch the latest transcript
+  const fetchLatestTranscript = async () => {
+    try {
+      console.log('Fetching latest transcript...');
+      const response = await fetch('/api/latest-transcript');
+      if (response.ok) {
+        const data = await response.json();
+        if (data.text && data.text !== transcript) {
+          console.log('New transcript fetched:', data.text.substring(0, 50) + '...');
+          setTranscript(data.text);
+          setMeetingId(data.meetingId);
+          setLastUpdate(new Date().toLocaleTimeString());
+        }
+      } else {
+        console.error('Failed to fetch transcript:', response.status);
+      }
+    } catch (error) {
+      console.error('Error fetching latest transcript:', error);
+    }
+  };
+
+  // Poll for latest transcript
   useEffect(() => {
-    // Initialize socket connection
+    // Initial fetch
+    fetchLatestTranscript();
+    
+    // Set up polling interval
+    const intervalId = setInterval(fetchLatestTranscript, 2000); // Poll every 2 seconds
+    
+    return () => clearInterval(intervalId); // Clean up
+  }, [transcript]); // Re-establish if transcript changes
+  
+  useEffect(() => {
+    // Initialize socket connection (keeping this as a backup)
     const initSocket = async () => {
       await fetch('/api/websocket');
       const socketIo = io({
@@ -26,13 +58,21 @@ export default function TranscriptReceiver() {
       });
 
       socketIo.on('connect', () => {
-        console.log('Socket connected');
+        console.log('Socket connected with ID:', socketIo.id);
         setIsConnected(true);
       });
 
       socketIo.on('disconnect', () => {
         console.log('Socket disconnected');
         setIsConnected(false);
+      });
+
+      socketIo.on('error', (error: any) => {
+        console.error('Socket error:', error);
+      });
+      
+      socketIo.on('connect_error', (error: any) => {
+        console.error('Socket connection error:', error);
       });
 
       socketIo.on('transcript-update', (data: TranscriptData) => {

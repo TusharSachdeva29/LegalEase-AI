@@ -14,10 +14,11 @@ export default async function handler(req: NextApiRequest, res: NextApiResponseS
     path: '/api/websocket',
     addTrailingSlash: false,
     cors: {
-      origin: ["http://localhost:3000", "chrome-extension://*"],
-      methods: ["GET", "POST"],
+      origin: "*", // Allow all origins
+      methods: ["GET", "POST", "OPTIONS"],
       credentials: true
     },
+    transports: ['websocket', 'polling'],
   });
   
   res.socket.server.io = io;
@@ -26,7 +27,14 @@ export default async function handler(req: NextApiRequest, res: NextApiResponseS
     console.log(`Client connected: ${socket.id}`);
     
     socket.on('transcript', (data: { text: string, meetingId: string, timestamp: number }) => {
-      console.log(`Received transcript from meeting ${data.meetingId}:`, data.text.substring(0, 50) + '...');
+      console.log(`Received transcript from meeting ${data.meetingId} (length: ${data.text.length}):`, 
+                  data.text.substring(0, 50) + (data.text.length > 50 ? '...' : ''));
+      
+      // Send confirmation back to the sender
+      socket.emit('transcript-received', {
+        success: true,
+        timestamp: Date.now()
+      });
       
       // Broadcast the transcript to all clients (including the web app)
       io.emit('transcript-update', {
