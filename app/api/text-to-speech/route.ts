@@ -4,8 +4,9 @@ export async function POST(request: NextRequest) {
   try {
     const {
       text,
-      voice = "en-US-Standard-D",
+      voice = "en-IN-Standard-A",
       speed = 1.0,
+      languageCode = "en-IN",
     } = await request.json();
 
     if (!text) {
@@ -26,7 +27,7 @@ export async function POST(request: NextRequest) {
     const requestBody = {
       input: { text },
       voice: {
-        languageCode: "en-US",
+        languageCode: languageCode,
         name: voice,
         ssmlGender: "NEUTRAL",
       },
@@ -38,7 +39,7 @@ export async function POST(request: NextRequest) {
       },
     };
 
-    console.log("Calling Google Text-to-Speech API...");
+    console.log(`Calling Google Text-to-Speech API for ${languageCode}...`);
 
     const response = await fetch(
       `https://texttospeech.googleapis.com/v1/text:synthesize?key=${GOOGLE_TEXT_TO_SPEECH_KEY}`,

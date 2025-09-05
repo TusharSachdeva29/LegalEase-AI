@@ -3,11 +3,13 @@
 import { useState, useRef, useCallback } from "react";
 
 interface UseVoiceRecordingProps {
+  languageCode?: string;
   onTranscription?: (text: string) => void;
   onError?: (error: string) => void;
 }
 
 export function useVoiceRecording({
+  languageCode = "en-IN",
   onTranscription,
   onError,
 }: UseVoiceRecordingProps = {}) {
@@ -78,6 +80,7 @@ export function useVoiceRecording({
     try {
       const formData = new FormData();
       formData.append("audio", audioBlob, "audio.webm");
+      formData.append("languageCode", languageCode);
 
       const response = await fetch("/api/speech-to-text", {
         method: "POST",

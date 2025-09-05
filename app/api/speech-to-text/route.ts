@@ -1,10 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
+import { LEGAL_TERMS_BY_LANGUAGE } from "@/lib/languages";
 
 export async function POST(request: NextRequest) {
   try {
     // Get the audio data from the request
     const formData = await request.formData();
     const audioFile = formData.get("audio");
+    const languageCode = (formData.get("languageCode") as string) || "en-IN";
 
     if (!audioFile || !(audioFile instanceof File)) {
       return NextResponse.json(
@@ -50,13 +52,18 @@ export async function POST(request: NextRequest) {
     }
 
     console.log(
-      `Processing audio: type=${fileType}, encoding=${encoding}, size=${fileSize} bytes`
+      `Processing audio: type=${fileType}, encoding=${encoding}, size=${fileSize} bytes, language=${languageCode}`
     );
+
+    // Get language-specific legal terms for better recognition
+    const languageKey = languageCode.split("-")[0]; // Get language part (e.g., 'hi' from 'hi-IN')
+    const legalTerms =
+      LEGAL_TERMS_BY_LANGUAGE[languageKey] || LEGAL_TERMS_BY_LANGUAGE["en"];
 
     // Prepare the request to Google Cloud Speech API
     const config: any = {
       encoding: encoding,
-      languageCode: "en-US",
+      languageCode: languageCode,
       enableAutomaticPunctuation: true,
       model: "latest_long", // Better for conversational speech
       useEnhanced: true,
@@ -64,21 +71,7 @@ export async function POST(request: NextRequest) {
       profanityFilter: false,
       speechContexts: [
         {
-          phrases: [
-            "legal",
-            "contract",
-            "agreement",
-            "clause",
-            "law",
-            "attorney",
-            "document",
-            "analysis",
-            "help",
-            "explain",
-            "what",
-            "how",
-            "why",
-          ],
+          phrases: legalTerms,
           boost: 10,
         },
       ],

@@ -1,10 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
 import { chatWithAI } from "@/lib/gemini";
+import { LANGUAGE_PROMPTS } from "@/lib/languages";
 
 export async function POST(request: NextRequest) {
   try {
     console.log("Chat API called");
-    const { message, context, documentContext, documentName } =
+    const { message, context, documentContext, documentName, language } =
       await request.json();
 
     if (!message) {
@@ -17,6 +18,7 @@ export async function POST(request: NextRequest) {
 
     console.log("Message:", message);
     console.log("Context:", context);
+    console.log("Language:", language || "en");
     console.log("Has document context:", !!documentContext);
     console.log("Document name:", documentName);
 
@@ -28,8 +30,16 @@ export async function POST(request: NextRequest) {
         ? documentContext
         : undefined;
 
+    // Get language-specific prompt
+    const languageKey = language ? language.split("-")[0] : "en";
+    const languagePrompt =
+      LANGUAGE_PROMPTS[languageKey] || LANGUAGE_PROMPTS["en"];
+
+    // Combine user message with language instruction
+    const enhancedMessage = `${message}\n\n${languagePrompt}`;
+
     const response = await chatWithAI(
-      message,
+      enhancedMessage,
       context || "general",
       fullDocumentContext
     );

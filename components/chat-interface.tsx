@@ -11,6 +11,9 @@ import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
 import { useVoiceRecording } from "@/hooks/use-voice-recording";
 import { useTextToSpeech } from "@/hooks/use-text-to-speech";
+import { useLanguage } from "@/contexts/LanguageContext";
+import { LanguageCheckboxSelector } from "@/components/language-checkbox-selector";
+import { getSpeechLanguageCode, getVoiceLanguageCode } from "@/lib/languages";
 import {
   getAuth,
   onAuthStateChanged,
@@ -79,10 +82,16 @@ export function ChatInterface({
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
   const scrollAreaRef = useRef<HTMLDivElement>(null);
   const { toast } = useToast();
+  const { selectedLanguage } = useLanguage();
+
+  // Get language-specific codes for APIs
+  const speechLanguageCode = getSpeechLanguageCode(selectedLanguage.code);
+  const voiceLanguageCode = getVoiceLanguageCode(selectedLanguage.code);
 
   // Voice functionality hooks
   const { isRecording, isProcessing, startRecording, stopRecording } =
     useVoiceRecording({
+      languageCode: speechLanguageCode,
       onTranscription: (text) => {
         setInputValue(text);
         toast({
@@ -105,6 +114,8 @@ export function ChatInterface({
     isSpeaking,
     isLoading: isSpeechLoading,
   } = useTextToSpeech({
+    voice: voiceLanguageCode,
+    languageCode: speechLanguageCode,
     onError: (error) => {
       toast({
         title: "Speech output error",
@@ -355,6 +366,7 @@ export function ChatInterface({
         body: JSON.stringify({
           message: inputValue,
           context: chatMode,
+          language: selectedLanguage.code,
           documentContext:
             chatMode === "document" && hasDocumentText
               ? documentText
@@ -461,6 +473,7 @@ export function ChatInterface({
             )}
           </div>
           <div className="flex items-center space-x-2">
+            <LanguageCheckboxSelector compact />
             {hasUnsavedChanges && (
               <Badge variant="outline" className="text-xs">
                 Unsaved changes

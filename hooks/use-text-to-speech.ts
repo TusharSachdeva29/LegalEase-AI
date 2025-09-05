@@ -4,6 +4,7 @@ import { useState, useRef, useCallback } from "react";
 
 interface UseTextToSpeechProps {
   voice?: string;
+  languageCode?: string;
   speed?: number;
   onError?: (error: string) => void;
   onStart?: () => void;
@@ -11,7 +12,8 @@ interface UseTextToSpeechProps {
 }
 
 export function useTextToSpeech({
-  voice = "en-US-Standard-D",
+  voice = "en-IN-Standard-A",
+  languageCode = "en-IN",
   speed = 1.0,
   onError,
   onStart,
@@ -42,7 +44,7 @@ export function useTextToSpeech({
           headers: {
             "Content-Type": "application/json",
           },
-          body: JSON.stringify({ text, voice, speed }),
+          body: JSON.stringify({ text, voice, languageCode, speed }),
         });
 
         if (!response.ok) {
