@@ -7,6 +7,13 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card } from "@/components/ui/card";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { Badge } from "@/components/ui/badge";
+import {
+  getAuth,
+  onAuthStateChanged,
+  User as FirebaseUser,
+} from "firebase/auth";
+import firebaseApp from "@/lib/firebase";
 import {
   Send,
   Bot,
@@ -14,6 +21,8 @@ import {
   FileText,
   MessageCircle,
   Loader2,
+  History,
+  Save,
 } from "lucide-react";
 
 interface Message {
@@ -29,6 +38,21 @@ interface ChatInterfaceProps {
   documentName?: string;
 }
 
+interface ContinueChatData {
+  id: string;
+  title: string;
+  type: "document" | "transcript" | "advice";
+  preview: string;
+  timestamp: string;
+  messageCount: number;
+  lastMessage: string;
+  metadata?: {
+    documentName?: string;
+    transcriptDuration?: string;
+    analysisType?: string;
+  };
+}
+
 export function ChatInterface({
   documentContext = false,
   documentName,
@@ -41,11 +65,86 @@ export function ChatInterface({
   );
   const [documentText, setDocumentText] = useState<string>("");
   const [hasDocumentText, setHasDocumentText] = useState<boolean>(false);
+  const [user, setUser] = useState<FirebaseUser | null>(null);
+  const [currentChatId, setCurrentChatId] = useState<string | null>(null);
+  const [isContinuingChat, setIsContinuingChat] = useState(false);
+  const [chatTitle, setChatTitle] = useState<string>("");
+  const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
   const scrollAreaRef = useRef<HTMLDivElement>(null);
+
+  // Authentication
+  useEffect(() => {
+    const auth = getAuth(firebaseApp);
+    const unsubscribe = onAuthStateChanged(auth, (user) => {
+      setUser(user);
+    });
+    return () => unsubscribe();
+  }, []);
+
+  // Check for continuing chat from history
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      const continueData = sessionStorage.getItem("continueChat");
+      if (continueData) {
+        try {
+          const chatData: ContinueChatData = JSON.parse(continueData);
+          setIsContinuingChat(true);
+          setChatTitle(chatData.title);
+          setCurrentChatId(chatData.id);
+
+          // Set chat mode based on chat type
+          if (chatData.type === "document") {
+            setChatMode("document");
+          } else {
+            setChatMode("general");
+          }
+
+          // Load full chat history
+          loadChatHistory(chatData.id);
+
+          // Clear the session storage
+          sessionStorage.removeItem("continueChat");
+        } catch (error) {
+          console.error("Error parsing continue chat data:", error);
+        }
+      }
+    }
+  }, []);
+
+  const loadChatHistory = async (chatId: string) => {
+    try {
+      const response = await fetch(`/api/chat-history/${chatId}`);
+      if (response.ok) {
+        const data = await response.json();
+        const chat = data.chat;
+
+        // Convert stored messages to component format
+        const convertedMessages: Message[] = chat.messages.map((msg: any) => ({
+          ...msg,
+          timestamp: new Date(msg.timestamp),
+          type: msg.role === "user" ? "user" : "ai",
+        }));
+
+        setMessages(convertedMessages);
+
+        // Load document context if available
+        if (chat.metadata?.documentName && chat.type === "document") {
+          // Try to load document text if available
+          const storedText = sessionStorage.getItem("documentText");
+          if (storedText) {
+            setDocumentText(storedText);
+            setHasDocumentText(true);
+          }
+        }
+      }
+    } catch (error) {
+      console.error("Error loading chat history:", error);
+    }
+  };
 
   // Load document text from sessionStorage on component mount
   useEffect(() => {
-    if (typeof window !== "undefined") {
+    if (typeof window !== "undefined" && !isContinuingChat) {
       const storedText = sessionStorage.getItem("documentText");
       if (storedText) {
         setDocumentText(storedText);
@@ -59,11 +158,11 @@ export function ChatInterface({
         console.log("No document text found in sessionStorage");
       }
     }
-  }, []);
+  }, [isContinuingChat]);
 
   // Initialize messages after component mounts and document text is checked
   useEffect(() => {
-    if (messages.length === 0) {
+    if (messages.length === 0 && !isContinuingChat) {
       const initialMessage: Message = {
         id: "1",
         type: "ai",
@@ -79,7 +178,13 @@ export function ChatInterface({
       };
       setMessages([initialMessage]);
     }
-  }, [documentContext, documentName, hasDocumentText, messages.length]);
+  }, [
+    documentContext,
+    documentName,
+    hasDocumentText,
+    messages.length,
+    isContinuingChat,
+  ]);
 
   const scrollToBottom = () => {
     if (scrollAreaRef.current) {
@@ -94,7 +199,95 @@ export function ChatInterface({
 
   useEffect(() => {
     scrollToBottom();
+    // Mark as having unsaved changes when messages are added
+    if (messages.length > 1) {
+      setHasUnsavedChanges(true);
+    }
   }, [messages]);
+
+  const saveChatHistory = async () => {
+    if (!user || messages.length <= 1) return;
+
+    try {
+      const chatData = {
+        userId: user.uid,
+        title: chatTitle || generateChatTitle(),
+        type: chatMode === "document" ? "document" : "advice",
+        preview:
+          messages.length > 1
+            ? messages[1].content.substring(0, 150) + "..."
+            : "",
+        messages: messages.map((msg) => ({
+          id: msg.id,
+          content: msg.content,
+          role: msg.type === "user" ? "user" : "assistant",
+          timestamp: msg.timestamp.toISOString(),
+        })),
+        metadata: {
+          documentName:
+            documentName || (hasDocumentText ? "Uploaded Document" : undefined),
+          analysisType: chatMode,
+        },
+      };
+
+      const endpoint = currentChatId
+        ? `/api/chat-history`
+        : `/api/chat-history`;
+
+      const method = currentChatId ? "PUT" : "POST";
+      const body = currentChatId
+        ? {
+            chatId: currentChatId,
+            userId: user.uid,
+            messages: chatData.messages,
+            lastMessage: messages[messages.length - 1].content,
+          }
+        : chatData;
+
+      const response = await fetch(endpoint, {
+        method,
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(body),
+      });
+
+      if (response.ok) {
+        const result = await response.json();
+        if (!currentChatId && result.chatId) {
+          setCurrentChatId(result.chatId);
+        }
+        setHasUnsavedChanges(false);
+        console.log("Chat saved successfully");
+      }
+    } catch (error) {
+      console.error("Error saving chat:", error);
+    }
+  };
+
+  const generateChatTitle = () => {
+    if (messages.length > 1) {
+      const firstUserMessage = messages.find((m) => m.type === "user");
+      if (firstUserMessage) {
+        return (
+          firstUserMessage.content.substring(0, 50) +
+          (firstUserMessage.content.length > 50 ? "..." : "")
+        );
+      }
+    }
+    return `${
+      chatMode === "document" ? "Document" : "Legal"
+    } Chat - ${new Date().toLocaleDateString()}`;
+  };
+
+  // Auto-save every 30 seconds if there are unsaved changes
+  useEffect(() => {
+    if (hasUnsavedChanges && user) {
+      const autoSaveInterval = setInterval(() => {
+        saveChatHistory();
+      }, 30000); // 30 seconds
+
+      return () => clearInterval(autoSaveInterval);
+    }
+  }, [hasUnsavedChanges, user, messages]);
 
   const handleSendMessage = async () => {
     if (!inputValue.trim() || isLoading) return;
@@ -143,6 +336,11 @@ export function ChatInterface({
       };
 
       setMessages((prev) => [...prev, aiResponse]);
+
+      // Auto-save after each exchange
+      if (user) {
+        setTimeout(() => saveChatHistory(), 1000);
+      }
     } catch (error) {
       console.error("Error getting AI response:", error);
       const errorMessage: Message = {
@@ -176,9 +374,47 @@ export function ChatInterface({
 
   return (
     <Card className="w-full max-w-4xl mx-auto h-[600px] flex flex-col p-0">
-      {/* Chat Mode Toggle */}
-      {!documentContext && (
-        <div className="p-4 border-b border-border">
+      {/* Chat Header */}
+      <div className="p-4 border-b border-border">
+        <div className="flex items-center justify-between mb-2">
+          <div className="flex items-center space-x-2">
+            {isContinuingChat && (
+              <Badge
+                variant="secondary"
+                className="flex items-center space-x-1"
+              >
+                <History className="w-3 h-3" />
+                <span>Continuing Chat</span>
+              </Badge>
+            )}
+            {chatTitle && (
+              <h3 className="font-semibold text-sm text-muted-foreground">
+                {chatTitle}
+              </h3>
+            )}
+          </div>
+          <div className="flex items-center space-x-2">
+            {hasUnsavedChanges && (
+              <Badge variant="outline" className="text-xs">
+                Unsaved changes
+              </Badge>
+            )}
+            {user && messages.length > 1 && (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={saveChatHistory}
+                className="flex items-center space-x-1"
+              >
+                <Save className="w-3 h-3" />
+                <span>Save</span>
+              </Button>
+            )}
+          </div>
+        </div>
+
+        {/* Chat Mode Toggle */}
+        {!documentContext && (
           <div className="flex gap-2">
             <Button
               variant={chatMode === "general" ? "default" : "outline"}
@@ -203,8 +439,8 @@ export function ChatInterface({
               )}
             </Button>
           </div>
-        </div>
-      )}
+        )}
+      </div>
 
       {/* Chat Messages */}
       <ScrollArea ref={scrollAreaRef} className="flex-1 px-3 py-2">

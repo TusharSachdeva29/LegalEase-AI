@@ -63,8 +63,8 @@ export function Navbar() {
                   LegalEase AI
                 </h1>
               </div>
-              <Badge 
-                variant="secondary" 
+              <Badge
+                variant="secondary"
                 className="text-xs font-medium px-2 py-0.5 bg-primary/10 text-primary border-primary/20 hover:bg-primary/20 transition-colors"
               >
                 Beta
@@ -85,6 +85,14 @@ export function Navbar() {
                   >
                     <Video className="h-4 w-4" />
                     <span>Start Meeting</span>
+                  </Button>
+                </Link>
+                <Link href="/history">
+                  <Button
+                    variant="outline"
+                    className="flex items-center space-x-2 border-2 border-blue-500/20 hover:border-blue-500/40 hover:bg-blue-500/5 text-blue-700 hover:text-blue-800 transition-all duration-300"
+                  >
+                    <span>History</span>
                   </Button>
                 </Link>
                 <div className="flex items-center space-x-3 group">
@@ -118,9 +126,7 @@ export function Navbar() {
             ) : (
               <>
                 <Link href="/signin">
-                  <Button 
-                    className="relative group/btn overflow-hidden bg-gradient-to-r from-primary to-accent hover:opacity-90 text-white font-medium px-4 py-3 h-auto rounded-xl shadow-lg transition-all duration-300 border-0"
-                  >
+                  <Button className="relative group/btn overflow-hidden bg-gradient-to-r from-primary to-accent hover:opacity-90 text-white font-medium px-4 py-3 h-auto rounded-xl shadow-lg transition-all duration-300 border-0">
                     <div className="absolute inset-0 bg-white/20 group-hover/btn:translate-y-0 transition-transform duration-500"></div>
                     <span className="relative">Get Started</span>
                   </Button>
@@ -173,6 +179,14 @@ export function Navbar() {
                         >
                           <Video className="h-4 w-4 mr-2" />
                           Start Meeting
+                        </Button>
+                      </Link>
+                      <Link href="/history" className="w-full">
+                        <Button
+                          variant="outline"
+                          className="w-full justify-start text-blue-700 hover:text-blue-800 border-blue-500/20"
+                        >
+                          History
                         </Button>
                       </Link>
                       <Button

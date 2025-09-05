@@ -47,7 +47,7 @@ const sidebarOptions = [
 	{
 		name: "Document History",
 		icon: History,
-		href: "/dashboardhistory",
+		href: "/history",
 	},
 ];
 

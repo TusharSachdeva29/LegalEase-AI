@@ -4,16 +4,36 @@ import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Navbar } from "@/components/navbar";
 import { Input } from "@/components/ui/input";
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
-import { VideoIcon, Users, Link as LinkIcon, Copy, Share2, Check, Calendar, Loader2 } from "lucide-react";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import {
+  VideoIcon,
+  Users,
+  Link as LinkIcon,
+  Copy,
+  Share2,
+  Check,
+  Calendar,
+  Loader2,
+} from "lucide-react";
 import { getAuth, onAuthStateChanged, User } from "firebase/auth";
 import firebaseApp from "@/lib/firebase";
 import { extractMeetCode, generateJoinUrl } from "@/lib/meet-utils";
 import { useRouter } from "next/navigation";
 import { toast } from "@/components/ui/use-toast";
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
-import TranscriptReceiver from "@/components/transcript-receiver";
-import TranscriptAnalyzer from "@/components/transcript-analyzer";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
+import TranscriptAnalyzerCombined from "@/components/transcript-analyzer-combined";
 
 export default function MeetPage() {
   const [user, setUser] = useState<User | null>(null);
@@ -22,7 +42,7 @@ export default function MeetPage() {
   const [copied, setCopied] = useState<boolean>(false);
   const [loading, setLoading] = useState<boolean>(false);
   const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null);
-  
+
   const router = useRouter();
 
   useEffect(() => {
@@ -30,24 +50,24 @@ export default function MeetPage() {
     const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
       setUser(currentUser);
     });
-    
+
     // Check if we have Google access token
     const checkGoogleAuth = async () => {
       try {
-        const response = await fetch('/api/meet/auth/check', { 
-          method: 'GET',
-          credentials: 'include'
+        const response = await fetch("/api/meet/auth/check", {
+          method: "GET",
+          credentials: "include",
         });
         const data = await response.json();
         setIsAuthenticated(data.authenticated);
       } catch (error) {
-        console.error('Error checking authentication:', error);
+        console.error("Error checking authentication:", error);
         setIsAuthenticated(false);
       }
     };
-    
+
     checkGoogleAuth();
-    
+
     return () => unsubscribe();
   }, []);
 
@@ -75,13 +95,13 @@ export default function MeetPage() {
 
   const authenticateWithGoogle = async () => {
     try {
-      const response = await fetch('/api/meet/auth', { method: 'GET' });
+      const response = await fetch("/api/meet/auth", { method: "GET" });
       const data = await response.json();
       if (data.authUrl) {
         window.location.href = data.authUrl;
       }
     } catch (error) {
-      console.error('Error authenticating with Google:', error);
+      console.error("Error authenticating with Google:", error);
       toast({
         title: "Authentication Error",
         description: "Failed to authenticate with Google",
@@ -95,24 +115,24 @@ export default function MeetPage() {
       authenticateWithGoogle();
       return;
     }
-    
+
     setLoading(true);
-    
+
     try {
-      const response = await fetch('/api/meet/create', {
-        method: 'POST',
+      const response = await fetch("/api/meet/create", {
+        method: "POST",
         headers: {
-          'Content-Type': 'application/json',
+          "Content-Type": "application/json",
         },
-        credentials: 'include',
+        credentials: "include",
         body: JSON.stringify({
-          summary: 'LegalEase Consultation',
-          description: 'Legal document review and consultation meeting',
+          summary: "LegalEase Consultation",
+          description: "Legal document review and consultation meeting",
         }),
       });
-      
+
       const data = await response.json();
-      
+
       if (response.ok && data.meetingLink) {
         setMeetingLink(data.meetingLink);
         toast({
@@ -120,15 +140,15 @@ export default function MeetPage() {
           description: "Your Google Meet has been created",
         });
         // Automatically open the meeting in a new tab
-        window.open(data.meetingLink, '_blank');
+        window.open(data.meetingLink, "_blank");
       } else if (data.requiresAuth) {
         // Need to re-authenticate
         authenticateWithGoogle();
       } else {
-        throw new Error(data.error || 'Failed to create meeting');
+        throw new Error(data.error || "Failed to create meeting");
       }
     } catch (error) {
-      console.error('Error creating meeting:', error);
+      console.error("Error creating meeting:", error);
       toast({
         title: "Error",
         description: "Failed to create Google Meet meeting",
@@ -148,9 +168,9 @@ export default function MeetPage() {
       });
       return;
     }
-    
+
     const meetUrl = meetingLink || `https://meet.google.com/${meetingId}`;
-    window.open(meetUrl, '_blank');
+    window.open(meetUrl, "_blank");
   };
 
   return (
@@ -222,13 +242,16 @@ export default function MeetPage() {
               </CardHeader>
               <CardContent className="pt-6">
                 <div className="flex space-x-2">
-                  <Input 
+                  <Input
                     value={meetingId}
                     onChange={(e) => setMeetingId(e.target.value)}
                     placeholder="Enter meeting ID"
                     className="border-green-200 focus:border-green-500"
                   />
-                  <Button onClick={joinMeeting} className="whitespace-nowrap bg-green-600 hover:bg-green-700 text-white">
+                  <Button
+                    onClick={joinMeeting}
+                    className="whitespace-nowrap bg-green-600 hover:bg-green-700 text-white"
+                  >
                     Join
                   </Button>
                 </div>
@@ -246,31 +269,40 @@ export default function MeetPage() {
             <CardContent>
               <div className="flex items-center space-x-2">
                 <div className="flex-1 border border-green-200 rounded-md px-3 py-2 bg-green-50 text-sm overflow-hidden overflow-ellipsis whitespace-nowrap">
-                  {meetingLink || (meetingId ? `https://meet.google.com/${meetingId}` : 'Create or join a meeting first')}
+                  {meetingLink ||
+                    (meetingId
+                      ? `https://meet.google.com/${meetingId}`
+                      : "Create or join a meeting first")}
                 </div>
-                <Button 
-                  onClick={copyToClipboard} 
-                  variant="outline" 
-                  size="icon" 
+                <Button
+                  onClick={copyToClipboard}
+                  variant="outline"
+                  size="icon"
                   className="border-green-200"
                   disabled={!meetingLink && !meetingId}
                 >
-                  {copied ? <Check className="h-4 w-4 text-green-600" /> : <Copy className="h-4 w-4" />}
+                  {copied ? (
+                    <Check className="h-4 w-4 text-green-600" />
+                  ) : (
+                    <Copy className="h-4 w-4" />
+                  )}
                 </Button>
                 <TooltipProvider>
                   <Tooltip>
                     <TooltipTrigger asChild>
-                      <Button 
-                        variant="outline" 
-                        size="icon" 
+                      <Button
+                        variant="outline"
+                        size="icon"
                         className="border-green-200"
                         disabled={!meetingLink && !meetingId}
                         onClick={() => {
                           if (navigator.share && (meetingLink || meetingId)) {
                             navigator.share({
-                              title: 'Join my LegalEase meeting',
-                              text: 'Click to join my legal consultation meeting',
-                              url: meetingLink || `https://meet.google.com/${meetingId}`
+                              title: "Join my LegalEase meeting",
+                              text: "Click to join my legal consultation meeting",
+                              url:
+                                meetingLink ||
+                                `https://meet.google.com/${meetingId}`,
                             });
                           }
                         }}
@@ -290,27 +322,40 @@ export default function MeetPage() {
             </CardFooter>
           </Card>
 
-          {/* Transcript Receiver and Analysis */}
+          {/* Combined Transcript & Analysis */}
           <div className="mt-8">
-            <h2 className="text-2xl font-bold mb-4">Meet Transcription & Analysis</h2>
+            <h2 className="text-2xl font-bold mb-4">
+              Meet Transcription & Analysis
+            </h2>
             <p className="text-muted-foreground mb-6">
-              Install the LegalEase Meet Assistant Chrome extension to automatically capture and analyze your Google Meet conversations.
+              Install the LegalEase Meet Assistant Chrome extension to
+              automatically capture and analyze your Google Meet conversations.
             </p>
-            
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              <TranscriptReceiver />
-              <TranscriptAnalyzer />
+
+            <div className="max-w-4xl mx-auto">
+              <TranscriptAnalyzerCombined />
             </div>
-            
+
             <div className="mt-6 p-4 bg-muted rounded-md">
-              <h3 className="font-medium mb-2">How to use the Meet Assistant</h3>
+              <h3 className="font-medium mb-2">
+                How to use the Meet Assistant
+              </h3>
               <ol className="list-decimal pl-5 space-y-2 text-sm text-muted-foreground">
-                <li>Install the LegalEase Chrome extension from the provided ZIP file or Chrome Web Store</li>
+                <li>
+                  Install the LegalEase Chrome extension from the provided ZIP
+                  file or Chrome Web Store
+                </li>
                 <li>Start or join a Google Meet call</li>
-                <li>Click the LegalEase icon in your browser to activate the extension</li>
+                <li>
+                  Click the LegalEase icon in your browser to activate the
+                  extension
+                </li>
                 <li>Allow microphone access when prompted</li>
                 <li>Start recording to see the transcript in real-time</li>
-                <li>Use the "Analyze with Gemini" button to get AI-powered legal insights</li>
+                <li>
+                  Use the "Analyze with Gemini" button to get AI-powered legal
+                  insights
+                </li>
               </ol>
             </div>
           </div>
