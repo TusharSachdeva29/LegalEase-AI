@@ -33,6 +33,7 @@ import {
   MicOff,
   Volume2,
   VolumeX,
+  Trash2,
 } from "lucide-react";
 
 interface Message {
@@ -80,6 +81,13 @@ export function ChatInterface({
   const [isContinuingChat, setIsContinuingChat] = useState(false);
   const [chatTitle, setChatTitle] = useState<string>("");
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
+  const [chatHistory, setChatHistory] = useState<Array<{
+    id: string;
+    title: string;
+    messages: Message[];
+    timestamp: Date;
+    type: "document" | "general";
+  }>>([]);
   const scrollAreaRef = useRef<HTMLDivElement>(null);
   const { toast } = useToast();
   const { selectedLanguage } = useLanguage();
@@ -132,6 +140,147 @@ export function ChatInterface({
       setUser(user);
     });
     return () => unsubscribe();
+  }, []);
+
+  // Local storage functions for chat history
+  const saveChatToLocalStorage = (chatData: {
+    id: string;
+    title: string;
+    messages: Message[];
+    timestamp: Date;
+    type: "document" | "general";
+  }) => {
+    try {
+      const existingChats = localStorage.getItem("chatHistory");
+      let chats = existingChats ? JSON.parse(existingChats) : [];
+      
+      // Remove existing chat with same ID if it exists
+      chats = chats.filter((chat: any) => chat.id !== chatData.id);
+      
+      // Add new chat data (serialize dates)
+      const serializedChat = {
+        ...chatData,
+        timestamp: chatData.timestamp.toISOString(),
+        messages: chatData.messages.map(msg => ({
+          ...msg,
+          timestamp: msg.timestamp.toISOString()
+        }))
+      };
+      
+      chats.unshift(serializedChat); // Add to beginning
+      
+      // Keep only last 50 chats
+      chats = chats.slice(0, 50);
+      
+      localStorage.setItem("chatHistory", JSON.stringify(chats));
+      loadChatHistoryFromStorage(); // Refresh the state
+    } catch (error) {
+      console.error("Error saving chat to localStorage:", error);
+    }
+  };
+
+  const loadChatHistoryFromStorage = () => {
+    try {
+      const existingChats = localStorage.getItem("chatHistory");
+      if (existingChats) {
+        const chats = JSON.parse(existingChats);
+        // Deserialize dates
+        const deserializedChats = chats.map((chat: any) => ({
+          ...chat,
+          timestamp: new Date(chat.timestamp),
+          messages: chat.messages.map((msg: any) => ({
+            ...msg,
+            timestamp: new Date(msg.timestamp)
+          }))
+        }));
+        setChatHistory(deserializedChats);
+      }
+    } catch (error) {
+      console.error("Error loading chat history from localStorage:", error);
+    }
+  };
+
+  const loadChatFromStorage = (chatId: string) => {
+    const storedChats = localStorage.getItem("chatHistory");
+    if (storedChats) {
+      const chats = JSON.parse(storedChats);
+      const chat = chats.find((c: any) => c.id === chatId);
+      if (chat) {
+        const deserializedMessages = chat.messages.map((msg: any) => ({
+          ...msg,
+          timestamp: new Date(msg.timestamp)
+        }));
+        setMessages(deserializedMessages);
+        setChatTitle(chat.title);
+        setCurrentChatId(chat.id);
+        setChatMode(chat.type);
+        setIsContinuingChat(true);
+      }
+    }
+  };
+
+  const startNewChat = () => {
+    setMessages([]);
+    setCurrentChatId(null);
+    setChatTitle("");
+    setIsContinuingChat(false);
+    setChatMode(documentContext ? "document" : "general");
+    setInputValue("");
+    
+    // Add initial welcome message
+    setTimeout(() => {
+      const initialMessage: Message = {
+        id: "1",
+        type: "ai",
+        content: documentContext
+          ? hasDocumentText
+            ? `Hello! I'm here to help you understand your document${
+                documentName ? ` "${documentName}"` : ""
+              }. I have access to the full document content and can answer specific questions about clauses, risks, or legal implications.`
+            : `Hello! I'm your legal AI assistant. It looks like you don't have a document uploaded yet. Upload a document first to get specific analysis, or ask me general legal questions.`
+          : "Hello! I'm your legal AI assistant. I can help with general legal questions, contract advice, and document analysis. How can I assist you today?",
+        timestamp: new Date(),
+        context: documentContext ? "document" : "general",
+      };
+      setMessages([initialMessage]);
+    }, 100);
+  };
+
+  const deleteChatFromStorage = (chatId: string, event: React.MouseEvent) => {
+    event.stopPropagation(); // Prevent chat selection when deleting
+    try {
+      const existingChats = localStorage.getItem("chatHistory");
+      if (existingChats) {
+        let chats = JSON.parse(existingChats);
+        chats = chats.filter((chat: any) => chat.id !== chatId);
+        localStorage.setItem("chatHistory", JSON.stringify(chats));
+        loadChatHistoryFromStorage(); // Refresh the state
+        
+        // If we deleted the currently active chat, start a new one
+        if (currentChatId === chatId) {
+          startNewChat();
+        }
+        
+        toast({
+          title: "Chat deleted",
+          description: "Chat has been removed from history",
+        });
+      }
+    } catch (error) {
+      console.error("Error deleting chat:", error);
+      toast({
+        title: "Error",
+        description: "Failed to delete chat",
+        variant: "destructive",
+      });
+    }
+  };
+
+  // Load chat history on component mount
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      loadChatHistoryFromStorage();
+    }
   }, []);
 
   // Check for continuing chat from history
@@ -391,6 +540,23 @@ export function ChatInterface({
 
       setMessages((prev) => [...prev, aiResponse]);
 
+      // Save chat to local storage after each exchange
+      const updatedMessages = [...messages, userMessage, aiResponse];
+      const chatId = currentChatId || Date.now().toString();
+      const chatTitle = generateChatTitle();
+      
+      saveChatToLocalStorage({
+        id: chatId,
+        title: chatTitle,
+        messages: updatedMessages,
+        timestamp: new Date(),
+        type: chatMode
+      });
+      
+      if (!currentChatId) {
+        setCurrentChatId(chatId);
+      }
+
       // Auto-save after each exchange
       if (user) {
         setTimeout(() => saveChatHistory(), 1000);
@@ -443,7 +609,10 @@ export function ChatInterface({
   };
 
   return (
-    <Card className="w-full max-w-4xl mx-auto h-[600px] flex flex-col p-0">
+    <div className="flex w-full max-w-6xl mx-auto h-[600px] gap-4">
+
+            {/* Main Chat Interface */}
+    <Card className="flex-1 h-full flex flex-col p-0">
       {/* Chat Header */}
       <div className="p-4 border-b border-border">
         <div className="flex items-center justify-between mb-2">
@@ -664,5 +833,79 @@ export function ChatInterface({
         </div>
       </div>
     </Card>
+    
+      {/* Chat History Sidebar */}
+      <div className="w-80 border border-border rounded-lg p-4 overflow-y-auto bg-card">
+        <div className="flex items-center justify-between mb-4">
+          <h3 className="font-semibold text-lg">Chat History</h3>
+          <Badge variant="outline" className="text-xs">
+            {chatHistory.length} chats
+          </Badge>
+        </div>
+        
+        <Button
+          onClick={startNewChat}
+          variant="outline"
+          className="w-full mb-4 flex items-center gap-2"
+        >
+          <MessageCircle className="w-4 h-4" />
+          New Chat
+        </Button>
+        
+        {chatHistory.length === 0 ? (
+          <p className="text-sm text-muted-foreground text-center py-8">
+            No chat history yet. Start a conversation!
+          </p>
+        ) : (
+          <div className="space-y-2">
+            {chatHistory.map((chat) => (
+              <div
+                key={chat.id}
+                className={`group p-3 rounded-lg cursor-pointer border transition-colors hover:bg-muted/50 ${
+                  currentChatId === chat.id
+                    ? "bg-primary/10 border-primary/30"
+                    : "border-border"
+                }`}
+                onClick={() => loadChatFromStorage(chat.id)}
+              >
+                <div className="flex items-start justify-between mb-1">
+                  <h4 className="font-medium text-sm truncate flex-1">
+                    {chat.title}
+                  </h4>
+                  <div className="flex items-center gap-1 ml-2">
+                    <Badge variant="outline" className="text-xs">
+                      {chat.type}
+                    </Badge>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-6 w-6 opacity-0 group-hover:opacity-100 hover:bg-destructive/10 hover:text-destructive"
+                      onClick={(e) => deleteChatFromStorage(chat.id, e)}
+                      title="Delete chat"
+                    >
+                      <Trash2 className="h-3 w-3" />
+                    </Button>
+                  </div>
+                </div>
+                <p className="text-xs text-muted-foreground truncate mb-2">
+                  {chat.messages.length > 0 
+                    ? chat.messages[chat.messages.length - 1].content.substring(0, 100) + "..."
+                    : "No messages"
+                  }
+                </p>
+                <div className="flex items-center justify-between">
+                  <span className="text-xs text-muted-foreground">
+                    {chat.timestamp.toLocaleDateString()} {chat.timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                  </span>
+                  <Badge variant="secondary" className="text-xs">
+                    {chat.messages.length} msgs
+                  </Badge>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+    </div>
   );
 }
