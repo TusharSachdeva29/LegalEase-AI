@@ -8,6 +8,9 @@ import { Input } from "@/components/ui/input";
 import { Card } from "@/components/ui/card";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Badge } from "@/components/ui/badge";
+import { useToast } from "@/hooks/use-toast";
+import { useVoiceRecording } from "@/hooks/use-voice-recording";
+import { useTextToSpeech } from "@/hooks/use-text-to-speech";
 import {
   getAuth,
   onAuthStateChanged,
@@ -23,6 +26,10 @@ import {
   Loader2,
   History,
   Save,
+  Mic,
+  MicOff,
+  Volume2,
+  VolumeX,
 } from "lucide-react";
 
 interface Message {
@@ -71,6 +78,41 @@ export function ChatInterface({
   const [chatTitle, setChatTitle] = useState<string>("");
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
   const scrollAreaRef = useRef<HTMLDivElement>(null);
+  const { toast } = useToast();
+
+  // Voice functionality hooks
+  const { isRecording, isProcessing, startRecording, stopRecording } =
+    useVoiceRecording({
+      onTranscription: (text) => {
+        setInputValue(text);
+        toast({
+          title: "Voice input received",
+          description: "Speech converted to text successfully",
+        });
+      },
+      onError: (error) => {
+        toast({
+          title: "Voice input error",
+          description: error,
+          variant: "destructive",
+        });
+      },
+    });
+
+  const {
+    speak,
+    stopSpeaking,
+    isSpeaking,
+    isLoading: isSpeechLoading,
+  } = useTextToSpeech({
+    onError: (error) => {
+      toast({
+        title: "Speech output error",
+        description: error,
+        variant: "destructive",
+      });
+    },
+  });
 
   // Authentication
   useEffect(() => {
@@ -372,12 +414,37 @@ export function ChatInterface({
     }
   };
 
+  const handleVoiceInput = () => {
+    if (isRecording) {
+      stopRecording();
+    } else {
+      startRecording();
+    }
+  };
+
+  const handleSpeakMessage = (text: string) => {
+    if (isSpeaking) {
+      stopSpeaking();
+    } else {
+      speak(text);
+    }
+  };
+
   return (
     <Card className="w-full max-w-4xl mx-auto h-[600px] flex flex-col p-0">
       {/* Chat Header */}
       <div className="p-4 border-b border-border">
         <div className="flex items-center justify-between mb-2">
           <div className="flex items-center space-x-2">
+            {isSpeaking && (
+              <Badge
+                variant="secondary"
+                className="flex items-center space-x-1"
+              >
+                <Volume2 className="w-3 h-3" />
+                <span>Speaking</span>
+              </Badge>
+            )}
             {isContinuingChat && (
               <Badge
                 variant="secondary"
@@ -464,7 +531,27 @@ export function ChatInterface({
                     : "bg-muted text-muted-foreground"
                 }`}
               >
-                <p className="text-sm leading-relaxed">{message.content}</p>
+                <div className="flex items-start justify-between gap-2">
+                  <p className="text-sm leading-relaxed flex-1">
+                    {message.content}
+                  </p>
+                  {message.type === "ai" && (
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => handleSpeakMessage(message.content)}
+                      disabled={isSpeechLoading}
+                      className="h-6 w-6 p-0 hover:bg-background/20"
+                      title={isSpeaking ? "Stop speaking" : "Read aloud"}
+                    >
+                      {isSpeaking ? (
+                        <VolumeX className="h-3 w-3" />
+                      ) : (
+                        <Volume2 className="h-3 w-3" />
+                      )}
+                    </Button>
+                  )}
+                </div>
                 <span className="text-xs opacity-70 mt-1 block">
                   {message.timestamp.toLocaleTimeString([], {
                     hour: "2-digit",
@@ -513,6 +600,26 @@ export function ChatInterface({
             disabled={isLoading}
           />
           <Button
+            variant="outline"
+            size="icon"
+            onClick={handleVoiceInput}
+            disabled={isLoading || isProcessing}
+            className={`${
+              isRecording
+                ? "bg-red-500 hover:bg-red-600 text-white border-red-500"
+                : ""
+            }`}
+            title={isRecording ? "Stop recording" : "Start voice input"}
+          >
+            {isProcessing ? (
+              <Loader2 className="w-4 h-4 animate-spin" />
+            ) : isRecording ? (
+              <MicOff className="w-4 h-4" />
+            ) : (
+              <Mic className="w-4 h-4" />
+            )}
+          </Button>
+          <Button
             onClick={handleSendMessage}
             disabled={!inputValue.trim() || isLoading}
             size="icon"
@@ -520,10 +627,28 @@ export function ChatInterface({
             <Send className="w-4 h-4" />
           </Button>
         </div>
-        <p className="text-xs text-muted-foreground mt-2">
-          This AI assistant provides general information only and is not a
-          substitute for professional legal advice.
-        </p>
+        <div className="flex items-center justify-between mt-2">
+          <p className="text-xs text-muted-foreground">
+            This AI assistant provides general information only and is not a
+            substitute for professional legal advice.
+          </p>
+          {(isRecording || isProcessing) && (
+            <div className="flex items-center gap-1 text-xs text-muted-foreground">
+              {isRecording && (
+                <>
+                  <div className="w-2 h-2 bg-red-500 rounded-full animate-pulse" />
+                  <span>Recording...</span>
+                </>
+              )}
+              {isProcessing && (
+                <>
+                  <Loader2 className="w-3 h-3 animate-spin" />
+                  <span>Processing...</span>
+                </>
+              )}
+            </div>
+          )}
+        </div>
       </div>
     </Card>
   );

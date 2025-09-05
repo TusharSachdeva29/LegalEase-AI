@@ -44,17 +44,17 @@ export async function POST(request: NextRequest) {
 
     // Read Google Cloud credentials from environment variables
     // In production, these should be securely stored
-    const GOOGLE_API_KEY = process.env.GOOGLE_API_KEY;
+    const GOOGLE_SPEECH_TO_TEXT = process.env.GOOGLE_SPEECH_TO_TEXT;
 
     console.log("API Key check:", {
-      isDefined: !!GOOGLE_API_KEY,
-      length: GOOGLE_API_KEY ? GOOGLE_API_KEY.length : 0,
-      prefix: GOOGLE_API_KEY
-        ? GOOGLE_API_KEY.substring(0, 5) + "..."
+      isDefined: !!GOOGLE_SPEECH_TO_TEXT,
+      length: GOOGLE_SPEECH_TO_TEXT ? GOOGLE_SPEECH_TO_TEXT.length : 0,
+      prefix: GOOGLE_SPEECH_TO_TEXT
+        ? GOOGLE_SPEECH_TO_TEXT.substring(0, 5) + "..."
         : "undefined",
     });
 
-    if (!GOOGLE_API_KEY) {
+    if (!GOOGLE_SPEECH_TO_TEXT) {
       console.error("Google API key not found in environment variables");
       return NextResponse.json(
         {
@@ -83,65 +83,78 @@ export async function POST(request: NextRequest) {
 
     // Detect the appropriate encoding based on file type
     let encoding = "LINEAR16";
+    let audioChannelCount = 1; // Default to mono
+
     if (fileType.includes("webm")) {
       encoding = "WEBM_OPUS";
+      audioChannelCount = 2; // WEBM OPUS is typically stereo
     } else if (fileType.includes("ogg")) {
       encoding = "OGG_OPUS";
+      audioChannelCount = 1; // OGG OPUS can be mono
     } else if (fileType.includes("mp3")) {
       encoding = "MP3";
+      audioChannelCount = 2; // MP3 is typically stereo
     } else if (fileType.includes("flac")) {
       encoding = "FLAC";
+      audioChannelCount = 2; // FLAC is typically stereo
     }
 
-    console.log("Using encoding:", encoding);
+    console.log(
+      "Using encoding:",
+      encoding,
+      "with",
+      audioChannelCount,
+      "channels"
+    );
 
     // Prepare the request to Google Cloud Speech API
+    const config: any = {
+      encoding: encoding,
+      audioChannelCount: audioChannelCount,
+      languageCode: "en-US",
+      enableAutomaticPunctuation: true,
+      model: "video", // Better for video content like Google Meet
+      useEnhanced: true, // Use enhanced model for better accuracy
+      enableWordTimeOffsets: true, // Get word timing information
+      enableWordConfidence: true, // Get confidence scores for each word
+      maxAlternatives: 1, // Only need the top transcript
+      profanityFilter: false, // Keep all words
+      speechContexts: [
+        {
+          // Add some context for legal terminology
+          phrases: [
+            "legal",
+            "contract",
+            "agreement",
+            "clause",
+            "plaintiff",
+            "defendant",
+            "lawyer",
+            "attorney",
+            "court",
+            "judge",
+            "law",
+            "provision",
+            "meeting",
+            "conference",
+            "call",
+            "discussion",
+            "conversation",
+          ],
+          boost: 10, // Boost recognition of these phrases
+        },
+      ],
+    };
+
+    // Don't specify sampleRateHertz for WEBM_OPUS - let Google auto-detect from header
+    // This prevents the "sample_rate_hertz must match the value in the WEBM OPUS header" error
+
     const apiRequest = {
-      config: {
-        encoding: encoding,
-        audioChannelCount: 2, // Set to match WEBM OPUS header (stereo)
-        languageCode: "en-US",
-        enableAutomaticPunctuation: true,
-        model: "video", // Better for video content like Google Meet
-        useEnhanced: true, // Use enhanced model for better accuracy
-        enableWordTimeOffsets: true, // Get word timing information
-        enableWordConfidence: true, // Get confidence scores for each word
-        maxAlternatives: 1, // Only need the top transcript
-        profanityFilter: false, // Keep all words
-        speechContexts: [
-          {
-            // Add some context for legal terminology
-            phrases: [
-              "legal",
-              "contract",
-              "agreement",
-              "clause",
-              "plaintiff",
-              "defendant",
-              "lawyer",
-              "attorney",
-              "court",
-              "judge",
-              "law",
-              "provision",
-              "meeting",
-              "conference",
-              "call",
-              "discussion",
-              "conversation",
-            ],
-            boost: 10, // Boost recognition of these phrases
-          },
-        ],
-      },
+      config: config,
       audio: {
         content: audioBase64,
       },
     };
-
-    // Ensure the audioChannelCount matches the WEBM OPUS header
-    // The error indicates WEBM OPUS header has 2 channels, so ensure we use 2
-    apiRequest.config.audioChannelCount = 2;
 
     // Debug: Log the actual config being sent to Google
     console.log(
@@ -155,7 +168,8 @@ export async function POST(request: NextRequest) {
     );
 
     const response = await fetch(
-      "https://speech.googleapis.com/v1/speech:recognize?key=" + GOOGLE_API_KEY,
+      "https://speech.googleapis.com/v1/speech:recognize?key=" +
+        GOOGLE_SPEECH_TO_TEXT,
       {
         method: "POST",
         headers: {
@@ -312,8 +326,8 @@ export async function POST(request: NextRequest) {
         encoding: encoding,
         fileType: fileType,
         fileSizeBytes: fileSize,
-        apiKeyFirstChars: GOOGLE_API_KEY
-          ? GOOGLE_API_KEY.substring(0, 5) + "..."
+        apiKeyFirstChars: GOOGLE_SPEECH_TO_TEXT
+          ? GOOGLE_SPEECH_TO_TEXT.substring(0, 5) + "..."
           : "missing",
       };
 

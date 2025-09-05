@@ -24,7 +24,7 @@ This document provides instructions for setting up and using the Google Cloud Sp
 1. **Set up environment variables in Next.js**:
    - Create or update `.env.local` in your project root:
    ```
-   GOOGLE_API_KEY=your-api-key-here
+   GOOGLE_SPEECH_TO_TEXT=your-api-key-here
    ```
 
 2. **Install Chrome extension**:
