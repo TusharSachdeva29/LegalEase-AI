@@ -6,7 +6,7 @@ let audioRecorder = null;
 let transcriptBuffer = [];
 let lastTranscriptSent = '';
 let meetingId = '';
-const SERVER_URL = 'http://localhost:3000/api/transcribe';
+const SERVER_URL = 'http://localhost:3001/api/transcribe';
 
 // Get the meeting ID from the URL
 function getMeetingIdFromUrl() {
@@ -295,7 +295,7 @@ function sendTranscriptToBackground(text) {
 function sendTranscriptDirectly(text) {
   console.log('Sending transcript directly via HTTP API');
   
-  fetch('http://localhost:3000/api/latest-transcript', {
+  fetch('http://localhost:3001/api/latest-transcript', {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json'
@@ -334,7 +334,7 @@ function sendDirectToWebSocket(text) {
       script.src = 'https://cdn.socket.io/4.5.4/socket.io.min.js';
       script.onload = () => {
         // Create direct socket connection
-        directSocket = io('http://localhost:3000', {
+        directSocket = io('http://localhost:3001', {
           path: '/api/websocket',
           transports: ['websocket', 'polling']
         });

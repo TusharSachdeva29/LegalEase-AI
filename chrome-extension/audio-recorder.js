@@ -32,7 +32,7 @@ class AudioRecorder {
             echoCancellation: false,     // Disable echo cancellation for clearer speech
             noiseSuppression: false,     // Disable noise suppression to prevent filtering out speech
             autoGainControl: true,       // Keep auto gain to normalize volume
-            channelCount: 1,             // Mono for clearer speech recognition
+            // channelCount: 1,          // Remove this to let the codec decide
             sampleRate: 16000,           // Match Google Speech API preferred sample rate
             sampleSize: 16               // 16-bit samples for better quality
           } 
