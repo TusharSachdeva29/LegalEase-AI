@@ -147,7 +147,7 @@ export default function UploadPage() {
   return (
     <div className="min-h-screen bg-gradient-to-b from-background to-background/95">
       <Navbar />
-      <div className="pt-4 pr-4 flex justify-end">
+      {/* <div className="pt-4 pr-4 flex justify-end">
         <Link
           href="/dashboard"
           className="inline-flex items-center text-muted-foreground hover:text-primary transition-all duration-300 hover:scale-105 bg-white/5 px-4 py-2 rounded-full backdrop-blur-sm border border-primary/10"
@@ -155,25 +155,29 @@ export default function UploadPage() {
           <ArrowLeft className="h-4 w-4 mr-2" />
           Back to Dashboard
         </Link>
-      </div>
+      </div> */}
 
       <main className="px-4 sm:px-6 lg:px-8">
         <div className="max-w-4xl mx-auto">
           {/* Header */}
-          <div className="text-center mb-12 space-y-6">
+          <div className="text-center my-8 space-y-6">
             <h1 className="text-3xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-primary to-primary/80 mb-4 leading-tight">
               Upload Your Legal Document
             </h1>
-            <p className="text-md text-muted-foreground/90 max-w-2xl mx-auto leading-relaxed">
+            {/* <p className="text-md text-muted-foreground/90 max-w-2xl mx-auto leading-relaxed">
               Upload your contract, agreement, or terms of service to get
               instant AI-powered analysis and plain-English explanations.
-            </p>
+            </p> */}
           </div>
 
           {/* Upload Section */}
           <div className="mb-12">
             {uploadState === "idle" && (
-              <Card className="p-8 hover:shadow-xl transition-all duration-500 hover:shadow-primary/5 border border-primary/10 backdrop-blur-sm">
+              <Card className="p-8 min-h-[28rem] hover:shadow-xl transition-all duration-500 hover:shadow-primary/5 border border-primary/10 backdrop-blur-sm">
+                {/* concise supported file types */}
+                <div className="text-xs text-muted-foreground mb-2 text-right">
+                  Supported: PDF, DOCX, PNG, JPG, JPEG (max 10MB)
+                </div>
                 <div
                   {...getRootProps()}
                   className={`border-2 border-dashed rounded-xl p-16 text-center cursor-pointer transition-all duration-300 group ${
@@ -204,8 +208,8 @@ export default function UploadPage() {
             )}
 
             {uploadState === "uploading" && (
-              <Card className="p-12 border border-primary/10 backdrop-blur-sm hover:shadow-xl transition-all duration-500 hover:shadow-primary/5">
-                <div className="text-center">
+              <Card className="p-8 min-h-[28rem] flex items-center justify-center hover:shadow-xl transition-all duration-500 hover:shadow-primary/5 border border-primary/10 backdrop-blur-sm">
+                <div className="flex flex-col justify-center items-center w-full text-center">
                   <div className="relative">
                     <div className="absolute inset-0 bg-gradient-to-r from-primary to-primary/80 rounded-full blur-xl opacity-20 animate-pulse"></div>
                     <div className="relative p-4 bg-gradient-to-br from-primary/20 to-primary/5 rounded-full w-fit mx-auto mb-6">
@@ -228,7 +232,7 @@ export default function UploadPage() {
               </Card>
             )}
 
-            {uploadState === "processing" && (
+            {/* {uploadState === "processing" && (
               <Card className="p-8">
                 <div className="text-center">
                   <div className="animate-spin rounded-full h-16 w-16 border-b-2 border-primary mx-auto mb-4"></div>
@@ -250,21 +254,21 @@ export default function UploadPage() {
                   </div>
                 </div>
               </Card>
-            )}
+            )} */}
 
             {uploadState === "processing" && (
-              <Card className="p-8">
-                <div className="text-center">
+              <Card className="p-8 min-h-[28rem] flex items-center justify-center hover:shadow-xl transition-all duration-500 hover:shadow-primary/5 border border-primary/10 backdrop-blur-sm">
+                <div className="flex flex-col justify-center items-center w-full text-center">
                   <div className="animate-spin rounded-full h-16 w-16 border-b-2 border-primary mx-auto mb-4"></div>
                   <h3 className="text-xl font-semibold text-foreground mb-2">
                     Processing document with AI...
                   </h3>
                   <p className="text-muted-foreground mb-6">
                     {uploadedFile?.type.startsWith("image/")
-                      ? "Analyzing image content with Gemini AI"
+                      ? "Analyzing image content"
                       : uploadedFile?.type === "application/pdf"
-                      ? "Extracting text from PDF with Gemini AI"
-                      : "Processing document content with AI"}
+                      ? "Extracting text from PDF"
+                      : "Processing document content"}
                   </p>
                   <div className="max-w-md mx-auto">
                     <Progress value={uploadProgress} className="mb-2" />
@@ -277,7 +281,7 @@ export default function UploadPage() {
             )}
 
             {uploadState === "success" && (
-              <Card className="p-12 border border-primary/10 backdrop-blur-sm hover:shadow-xl transition-all duration-500 hover:shadow-primary/5">
+              <Card className="p-8 min-h-[28rem] hover:shadow-xl transition-all duration-500 hover:shadow-primary/5 border border-primary/10 backdrop-blur-sm">
                 <div className="text-center">
                   <div className="relative">
                     <div className="absolute inset-0 bg-gradient-to-r from-green-500 to-primary rounded-full blur-xl opacity-20"></div>
@@ -294,20 +298,20 @@ export default function UploadPage() {
                   </p>
                   {processedDocument && (
                     <div className="text-sm text-muted-foreground mb-4 space-y-1">
-                      <p>
+                      {/* <p>
                         Processing method:{" "}
                         {processedDocument.processingMethod === "gemini-direct"
                           ? "Gemini AI Direct Upload"
                           : processedDocument.processingMethod === "text"
                           ? "Direct Text Reading"
                           : "Fallback Text Extraction"}
-                      </p>
+                      </p> */}
                       <p>
                         Extracted text: {processedDocument.text.length}{" "}
                         characters
                       </p>
                       {processedDocument.fileUri && (
-                        <p>File processed successfully through Gemini API</p>
+                        <p>File processed successfully</p>
                       )}
                     </div>
                   )}
@@ -325,19 +329,19 @@ export default function UploadPage() {
                     >
                       Upload Another Document
                     </Button>
-                    {processedDocument && (
+                    {/* {processedDocument && (
                       <Button variant="ghost" size="sm" className="text-xs">
                         <Eye className="h-3 w-3 mr-1" />
                         Preview Text
                       </Button>
-                    )}
+                    )} */}
                   </div>
                 </div>
               </Card>
             )}
 
             {uploadState === "error" && (
-              <Card className="p-8">
+              <Card className="p-8 min-h-[28rem] hover:shadow-xl transition-all duration-500 hover:shadow-primary/5 border border-primary/10 backdrop-blur-sm">
                 <div className="text-center">
                   <AlertCircle className="h-16 w-16 text-destructive mx-auto mb-4" />
                   <h3 className="text-xl font-semibold text-foreground mb-2">
@@ -353,7 +357,7 @@ export default function UploadPage() {
           </div>
 
           {/* File Requirements */}
-          <Card className="p-6 mb-10">
+          {/* <Card className="p-6 mb-10">
             <h3 className="text-lg font-semibold text-foreground mb-4">
               Supported File Types
             </h3>
@@ -384,17 +388,7 @@ export default function UploadPage() {
                 </div>
               </div>
             </div>
-            <div className="mt-6 p-4 bg-muted rounded-lg">
-              <p className="text-sm text-muted-foreground">
-                <strong>Enhanced AI Processing:</strong> Your documents are now
-                processed directly by Gemini AI for superior text extraction and
-                analysis. Files are uploaded securely to Google's servers for
-                processing and are automatically deleted after analysis. This
-                provides much better accuracy than traditional OCR, especially
-                for complex documents and images.
-              </p>
-            </div>
-          </Card>
+          </Card> */}
         </div>
       </main>
 

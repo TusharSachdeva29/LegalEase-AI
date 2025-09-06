@@ -611,231 +611,8 @@ export function ChatInterface({
   return (
     <div className="flex w-full max-w-6xl mx-auto h-[600px] gap-4">
 
-            {/* Main Chat Interface */}
-    <Card className="flex-1 h-full flex flex-col p-0">
-      {/* Chat Header */}
-      <div className="p-4 border-b border-border">
-        <div className="flex items-center justify-between mb-2">
-          <div className="flex items-center space-x-2">
-            {isSpeaking && (
-              <Badge
-                variant="secondary"
-                className="flex items-center space-x-1"
-              >
-                <Volume2 className="w-3 h-3" />
-                <span>Speaking</span>
-              </Badge>
-            )}
-            {isContinuingChat && (
-              <Badge
-                variant="secondary"
-                className="flex items-center space-x-1"
-              >
-                <History className="w-3 h-3" />
-                <span>Continuing Chat</span>
-              </Badge>
-            )}
-            {chatTitle && (
-              <h3 className="font-semibold text-sm text-muted-foreground">
-                {chatTitle}
-              </h3>
-            )}
-          </div>
-          <div className="flex items-center space-x-2">
-            <LanguageCheckboxSelector compact />
-            {hasUnsavedChanges && (
-              <Badge variant="outline" className="text-xs">
-                Unsaved changes
-              </Badge>
-            )}
-            {user && messages.length > 1 && (
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={saveChatHistory}
-                className="flex items-center space-x-1"
-              >
-                <Save className="w-3 h-3" />
-                <span>Save</span>
-              </Button>
-            )}
-          </div>
-        </div>
-
-        {/* Chat Mode Toggle */}
-        {!documentContext && (
-          <div className="flex gap-2">
-            <Button
-              variant={chatMode === "general" ? "default" : "outline"}
-              size="sm"
-              onClick={() => setChatMode("general")}
-              className="flex items-center gap-2"
-            >
-              <MessageCircle className="w-4 h-4" />
-              General Legal Advice
-            </Button>
-            <Button
-              variant={chatMode === "document" ? "default" : "outline"}
-              size="sm"
-              onClick={() => setChatMode("document")}
-              className="flex items-center gap-2"
-              disabled={!hasDocumentText}
-            >
-              <FileText className="w-4 h-4" />
-              Document Analysis
-              {!hasDocumentText && (
-                <span className="text-xs opacity-60">(No document)</span>
-              )}
-            </Button>
-          </div>
-        )}
-      </div>
-
-      {/* Chat Messages */}
-      <ScrollArea ref={scrollAreaRef} className="flex-1 px-3 py-2">
-        <div className="space-y-4">
-          {messages.map((message) => (
-            <div
-              key={message.id}
-              className={`flex gap-3 ${
-                message.type === "user" ? "justify-end" : "justify-start"
-              }`}
-            >
-              {message.type === "ai" && (
-                <div className="w-8 h-8 rounded-full bg-primary flex items-center justify-center flex-shrink-0">
-                  <Bot className="w-4 h-4 text-primary-foreground" />
-                </div>
-              )}
-              <div
-                className={`max-w-[80%] rounded-lg p-3 ${
-                  message.type === "user"
-                    ? "bg-primary text-primary-foreground ml-auto"
-                    : "bg-muted text-muted-foreground"
-                }`}
-              >
-                <div className="flex items-start justify-between gap-2">
-                  <p className="text-sm leading-relaxed flex-1">
-                    {message.content}
-                  </p>
-                  {message.type === "ai" && (
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => handleSpeakMessage(message.content)}
-                      disabled={isSpeechLoading}
-                      className="h-6 w-6 p-0 hover:bg-background/20"
-                      title={isSpeaking ? "Stop speaking" : "Read aloud"}
-                    >
-                      {isSpeaking ? (
-                        <VolumeX className="h-3 w-3" />
-                      ) : (
-                        <Volume2 className="h-3 w-3" />
-                      )}
-                    </Button>
-                  )}
-                </div>
-                <span className="text-xs opacity-70 mt-1 block">
-                  {message.timestamp.toLocaleTimeString([], {
-                    hour: "2-digit",
-                    minute: "2-digit",
-                  })}
-                </span>
-              </div>
-              {message.type === "user" && (
-                <div className="w-8 h-8 rounded-full bg-muted flex items-center justify-center flex-shrink-0">
-                  <User className="w-4 h-4 text-muted-foreground" />
-                </div>
-              )}
-            </div>
-          ))}
-          {isLoading && (
-            <div className="flex gap-3 justify-start">
-              <div className="w-8 h-8 rounded-full bg-primary flex items-center justify-center flex-shrink-0">
-                <Bot className="w-4 h-4 text-primary-foreground" />
-              </div>
-              <div className="bg-muted text-muted-foreground rounded-lg p-3">
-                <div className="flex items-center gap-2">
-                  <Loader2 className="w-4 h-4 animate-spin" />
-                  <span className="text-sm">Thinking...</span>
-                </div>
-              </div>
-            </div>
-          )}
-        </div>
-      </ScrollArea>
-
-      {/* Chat Input */}
-      <div className="px-4 py-4 border-t border-border">
-        <div className="flex gap-2">
-          <Input
-            value={inputValue}
-            onChange={(e) => setInputValue(e.target.value)}
-            onKeyPress={handleKeyPress}
-            placeholder={
-              chatMode === "document"
-                ? hasDocumentText
-                  ? "Ask about clauses, risks, or legal implications in your document..."
-                  : "Please upload a document first to ask specific questions..."
-                : "Ask any legal question..."
-            }
-            className="flex-1"
-            disabled={isLoading}
-          />
-          <Button
-            variant="outline"
-            size="icon"
-            onClick={handleVoiceInput}
-            disabled={isLoading || isProcessing}
-            className={`${
-              isRecording
-                ? "bg-red-500 hover:bg-red-600 text-white border-red-500"
-                : ""
-            }`}
-            title={isRecording ? "Stop recording" : "Start voice input"}
-          >
-            {isProcessing ? (
-              <Loader2 className="w-4 h-4 animate-spin" />
-            ) : isRecording ? (
-              <MicOff className="w-4 h-4" />
-            ) : (
-              <Mic className="w-4 h-4" />
-            )}
-          </Button>
-          <Button
-            onClick={handleSendMessage}
-            disabled={!inputValue.trim() || isLoading}
-            size="icon"
-          >
-            <Send className="w-4 h-4" />
-          </Button>
-        </div>
-        <div className="flex items-center justify-between mt-2">
-          <p className="text-xs text-muted-foreground">
-            This AI assistant provides general information only and is not a
-            substitute for professional legal advice.
-          </p>
-          {(isRecording || isProcessing) && (
-            <div className="flex items-center gap-1 text-xs text-muted-foreground">
-              {isRecording && (
-                <>
-                  <div className="w-2 h-2 bg-red-500 rounded-full animate-pulse" />
-                  <span>Recording...</span>
-                </>
-              )}
-              {isProcessing && (
-                <>
-                  <Loader2 className="w-3 h-3 animate-spin" />
-                  <span>Processing...</span>
-                </>
-              )}
-            </div>
-          )}
-        </div>
-      </div>
-    </Card>
-    
       {/* Chat History Sidebar */}
-      <div className="w-80 border border-border rounded-lg p-4 overflow-y-auto bg-card">
+      <div className="w-80 border border-border rounded-lg p-4 bg-card flex flex-col">
         <div className="flex items-center justify-between mb-4">
           <h3 className="font-semibold text-lg">Chat History</h3>
           <Badge variant="outline" className="text-xs">
@@ -852,60 +629,287 @@ export function ChatInterface({
           New Chat
         </Button>
         
-        {chatHistory.length === 0 ? (
-          <p className="text-sm text-muted-foreground text-center py-8">
-            No chat history yet. Start a conversation!
-          </p>
-        ) : (
-          <div className="space-y-2">
-            {chatHistory.map((chat) => (
-              <div
-                key={chat.id}
-                className={`group p-3 rounded-lg cursor-pointer border transition-colors hover:bg-muted/50 ${
-                  currentChatId === chat.id
-                    ? "bg-primary/10 border-primary/30"
-                    : "border-border"
-                }`}
-                onClick={() => loadChatFromStorage(chat.id)}
-              >
-                <div className="flex items-start justify-between mb-1">
-                  <h4 className="font-medium text-sm truncate flex-1">
-                    {chat.title}
-                  </h4>
-                  <div className="flex items-center gap-1 ml-2">
-                    <Badge variant="outline" className="text-xs">
-                      {chat.type}
+        <div className="flex-1 min-h-0">
+          {chatHistory.length === 0 ? (
+            <p className="text-sm text-muted-foreground text-center py-8">
+              No chat history yet. Start a conversation!
+            </p>
+          ) : (
+            <div className="space-y-2 overflow-y-auto h-full" style={{ maxHeight: "420px" }}>
+              {chatHistory.map((chat) => (
+                <div
+                  key={chat.id}
+                  className={`group p-3 rounded-lg cursor-pointer border transition-colors hover:bg-muted/50 ${
+                    currentChatId === chat.id
+                      ? "bg-primary/10 border-primary/30"
+                      : "border-border"
+                  }`}
+                  onClick={() => loadChatFromStorage(chat.id)}
+                >
+                  <div className="flex items-start justify-between mb-1">
+                    <h4 className="font-medium text-sm truncate flex-1">
+                      {chat.title}
+                    </h4>
+                    <div className="flex items-center gap-1 ml-2">
+                      <Badge variant="outline" className="text-xs">
+                        {chat.type}
+                      </Badge>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-6 w-6 opacity-0 group-hover:opacity-100 hover:bg-destructive/10 hover:text-destructive"
+                        onClick={(e) => deleteChatFromStorage(chat.id, e)}
+                        title="Delete chat"
+                      >
+                        <Trash2 className="h-3 w-3" />
+                      </Button>
+                    </div>
+                  </div>
+                  <p className="text-xs text-muted-foreground truncate mb-2">
+                    {chat.messages.length > 0 
+                      ? chat.messages[chat.messages.length - 1].content.substring(0, 100) + "..."
+                      : "No messages"
+                    }
+                  </p>
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs text-muted-foreground">
+                      {chat.timestamp.toLocaleDateString()} {chat.timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                    </span>
+                    <Badge variant="secondary" className="text-xs">
+                      {chat.messages.length} msgs
                     </Badge>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      className="h-6 w-6 opacity-0 group-hover:opacity-100 hover:bg-destructive/10 hover:text-destructive"
-                      onClick={(e) => deleteChatFromStorage(chat.id, e)}
-                      title="Delete chat"
-                    >
-                      <Trash2 className="h-3 w-3" />
-                    </Button>
                   </div>
                 </div>
-                <p className="text-xs text-muted-foreground truncate mb-2">
-                  {chat.messages.length > 0 
-                    ? chat.messages[chat.messages.length - 1].content.substring(0, 100) + "..."
-                    : "No messages"
-                  }
-                </p>
-                <div className="flex items-center justify-between">
-                  <span className="text-xs text-muted-foreground">
-                    {chat.timestamp.toLocaleDateString()} {chat.timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+              ))}
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* Main Chat Interface */}
+      <Card className="flex-1 h-full flex flex-col p-0">
+        {/* Chat Header */}
+        <div className="p-4 border-b border-border">
+          <div className="flex items-center justify-between mb-2">
+            <div className="flex items-center space-x-2">
+              {isSpeaking && (
+                <Badge
+                  variant="secondary"
+                  className="flex items-center space-x-1"
+                >
+                  <Volume2 className="w-3 h-3" />
+                  <span>Speaking</span>
+                </Badge>
+              )}
+              {isContinuingChat && (
+                <Badge
+                  variant="secondary"
+                  className="flex items-center space-x-1"
+                >
+                  <History className="w-3 h-3" />
+                  <span>Continuing Chat</span>
+                </Badge>
+              )}
+              {chatTitle && (
+                <h3 className="font-semibold text-sm text-muted-foreground">
+                  {chatTitle}
+                </h3>
+              )}
+            </div>
+            <div className="flex items-center space-x-2">
+              <LanguageCheckboxSelector compact />
+              {/* {hasUnsavedChanges && (
+                <Badge variant="outline" className="text-xs">
+                  Unsaved changes
+                </Badge>
+              )} */}
+              {/* {user && messages.length > 1 && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={saveChatHistory}
+                  className="flex items-center space-x-1"
+                >
+                  <Save className="w-3 h-3" />
+                  <span>Save</span>
+                </Button>
+              )} */}
+            </div>
+          </div>
+
+          {/* Chat Mode Toggle */}
+          {/* {!documentContext && (
+            <div className="flex gap-2">
+              <Button
+                variant={chatMode === "general" ? "default" : "outline"}
+                size="sm"
+                onClick={() => setChatMode("general")}
+                className="flex items-center gap-2"
+              >
+                <MessageCircle className="w-4 h-4" />
+                General Legal Advice
+              </Button>
+              <Button
+                variant={chatMode === "document" ? "default" : "outline"}
+                size="sm"
+                onClick={() => setChatMode("document")}
+                className="flex items-center gap-2"
+                disabled={!hasDocumentText}
+              >
+                <FileText className="w-4 h-4" />
+                Document Analysis
+                {!hasDocumentText && (
+                  <span className="text-xs opacity-60">(No document)</span>
+                )}
+              </Button>
+            </div>
+          )} */}
+        </div>
+
+        {/* Chat Messages */}
+        <ScrollArea ref={scrollAreaRef} className="flex-1 px-3 py-2">
+          <div className="space-y-4">
+            {messages.map((message) => (
+              <div
+                key={message.id}
+                className={`flex gap-3 ${
+                  message.type === "user" ? "justify-end" : "justify-start"
+                }`}
+              >
+                {message.type === "ai" && (
+                  <div className="w-8 h-8 rounded-full bg-primary flex items-center justify-center flex-shrink-0">
+                    <Bot className="w-4 h-4 text-primary-foreground" />
+                  </div>
+                )}
+                <div
+                  className={`max-w-[80%] rounded-lg p-3 ${
+                    message.type === "user"
+                      ? "bg-primary text-primary-foreground ml-auto"
+                      : "bg-muted text-muted-foreground"
+                  }`}
+                >
+                  <div className="flex items-start justify-between gap-2">
+                    <p className="text-sm leading-relaxed flex-1">
+                      {message.content}
+                    </p>
+                    {message.type === "ai" && (
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => handleSpeakMessage(message.content)}
+                        disabled={isSpeechLoading}
+                        className="h-6 w-6 p-0 hover:bg-background/20"
+                        title={isSpeaking ? "Stop speaking" : "Read aloud"}
+                      >
+                        {isSpeaking ? (
+                          <VolumeX className="h-3 w-3" />
+                        ) : (
+                          <Volume2 className="h-3 w-3" />
+                        )}
+                      </Button>
+                    )}
+                  </div>
+                  <span className="text-xs opacity-70 mt-1 block">
+                    {message.timestamp.toLocaleTimeString([], {
+                      hour: "2-digit",
+                      minute: "2-digit",
+                    })}
                   </span>
-                  <Badge variant="secondary" className="text-xs">
-                    {chat.messages.length} msgs
-                  </Badge>
                 </div>
+                {message.type === "user" && (
+                  <div className="w-8 h-8 rounded-full bg-muted flex items-center justify-center flex-shrink-0">
+                    <User className="w-4 h-4 text-muted-foreground" />
+                  </div>
+                )}
               </div>
             ))}
+            {isLoading && (
+              <div className="flex gap-3 justify-start">
+                <div className="w-8 h-8 rounded-full bg-primary flex items-center justify-center flex-shrink-0">
+                  <Bot className="w-4 h-4 text-primary-foreground" />
+                </div>
+                <div className="bg-muted text-muted-foreground rounded-lg p-3">
+                  <div className="flex items-center gap-2">
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                    <span className="text-sm">Thinking...</span>
+                  </div>
+                </div>
+              </div>
+            )}
           </div>
-        )}
-      </div>
+        </ScrollArea>
+
+        {/* Chat Input */}
+        <div className="px-4 py-4 border-t border-border">
+          <div className="flex gap-2">
+            <Input
+              value={inputValue}
+              onChange={(e) => setInputValue(e.target.value)}
+              onKeyPress={handleKeyPress}
+              placeholder={
+                chatMode === "document"
+                  ? hasDocumentText
+                    ? "Ask about clauses, risks, or legal implications in your document..."
+                    : "Please upload a document first to ask specific questions..."
+                  : "Ask any legal question..."
+              }
+              className="flex-1"
+              disabled={isLoading}
+            />
+            <Button
+              variant="outline"
+              size="icon"
+              onClick={handleVoiceInput}
+              disabled={isLoading || isProcessing}
+              className={`${
+                isRecording
+                  ? "bg-red-500 hover:bg-red-600 text-white border-red-500"
+                  : ""
+              }`}
+              title={isRecording ? "Stop recording" : "Start voice input"}
+            >
+              {isProcessing ? (
+                <Loader2 className="w-4 h-4 animate-spin" />
+              ) : isRecording ? (
+                <MicOff className="w-4 h-4" />
+              ) : (
+                <Mic className="w-4 h-4" />
+              )}
+            </Button>
+            <Button
+              onClick={handleSendMessage}
+              disabled={!inputValue.trim() || isLoading}
+              size="icon"
+            >
+              <Send className="w-4 h-4" />
+            </Button>
+          </div>
+          <div className="flex items-center justify-between mt-2">
+            <p className="text-xs text-muted-foreground">
+              This AI assistant provides general information only and is not a
+              substitute for professional legal advice.
+            </p>
+            {(isRecording || isProcessing) && (
+              <div className="flex items-center gap-1 text-xs text-muted-foreground">
+                {isRecording && (
+                  <>
+                    <div className="w-2 h-2 bg-red-500 rounded-full animate-pulse" />
+                    <span>Recording...</span>
+                  </>
+                )}
+                {isProcessing && (
+                  <>
+                    <Loader2 className="w-3 h-3 animate-spin" />
+                    <span>Processing...</span>
+                  </>
+                )}
+              </div>
+            )}
+          </div>
+        </div>
+      </Card>
+    
+      
     </div>
   );
 }
