@@ -11,6 +11,9 @@ import {
   LayoutDashboard,
   Video,
   Settings,
+  ChevronDown,
+  ChevronRight,
+  FileSearch,
 } from "lucide-react";
 import { usePathname } from "next/navigation";
 import {
@@ -27,37 +30,50 @@ const GREEN_BG_LIGHT = "bg-green-600/20";
 const GREEN_TEXT = "text-green-600";
 const GREEN_ACCENT = "bg-green-100/10";
 
+// Sidebar options with children for Document Analysis
 const sidebarOptions = [
   {
     name: "Dashboard",
-    icon: LayoutDashboard, // Changed to dashboard icon
+    icon: LayoutDashboard,
     href: "/dashboard",
   },
   {
-    name: "Upload Document",
-    icon: Upload,
-    href: "/upload",
+    name: "Document Analysis",
+    icon: FileText,
+    hasChildren: true,
+    children: [
+      {
+        name: "Upload",
+        icon: Upload,
+        href: "/upload",
+      },
+      {
+        name: "Analysis",
+        icon: FileSearch,
+        href: "/analysis",
+      },
+    ],
   },
   {
     name: "Legal Chat Assistant",
     icon: MessageCircle,
     href: "/chat",
   },
-  {
-    name: "Clause Analysis",
-    icon: FileText,
-    href: "/clauses",
-  },
+  // {
+  //   name: "Clause Analysis",
+  //   icon: FileText,
+  //   href: "/clauses",
+  // },
   {
     name: "Start Meeting",
     icon: Video,
     href: "/meet",
   },
-  {
-    name: "Chat History",
-    icon: History,
-    href: "/history",
-  },
+  // {
+  //   name: "Chat History",
+  //   icon: History,
+  //   href: "/history",
+  // },
   {
     name: "Settings",
     icon: Settings,
@@ -67,6 +83,7 @@ const sidebarOptions = [
 
 export function LeftSidebar({ userId }: { userId?: string }) {
   const [isExpanded, setIsExpanded] = useState(false);
+  const [openMenus, setOpenMenus] = useState<string[]>([]);
   const pathname = usePathname();
 
   // Firebase user state
@@ -88,6 +105,35 @@ export function LeftSidebar({ userId }: { userId?: string }) {
     );
   };
 
+  // Check if a parent menu has an active child
+  const hasActiveChild = (item: any) => {
+    if (!item.hasChildren || !item.children) return false;
+    return item.children.some((child: any) => isActive(child.href));
+  };
+
+  // Auto-expand parent menu when a child route is active
+  useEffect(() => {
+    sidebarOptions.forEach((item) => {
+      if (item.hasChildren && item.children) {
+        const shouldExpand = item.children.some(
+          (child: any) => isActive(child.href)
+        );
+        if (shouldExpand && !openMenus.includes(item.name)) {
+          setOpenMenus((prev) => [...prev, item.name]);
+        }
+      }
+    });
+    // eslint-disable-next-line
+  }, [pathname]);
+
+  const toggleMenu = (name: string) => {
+    if (openMenus.includes(name)) {
+      setOpenMenus(openMenus.filter((item) => item !== name));
+    } else {
+      setOpenMenus([...openMenus, name]);
+    }
+  };
+
   return (
     <div
       className={`fixed top-20 left-0 z-30 flex flex-col transition-all duration-300 ease-in-out overflow-hidden
@@ -103,12 +149,86 @@ export function LeftSidebar({ userId }: { userId?: string }) {
         style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}
       >
         {sidebarOptions.map((opt) => {
-          const Icon = opt.icon;
+          if (opt.hasChildren && opt.children) {
+            const active = hasActiveChild(opt);
+            return (
+              <div key={opt.name} className="w-full px-2 mb-1">
+                <div
+                  className={`
+                    flex items-center py-2.5 px-3 rounded-md transition-colors duration-200 cursor-pointer
+                    ${active ? "bg-green-600/20 text-green-800 font-medium" : "hover:bg-green-100/40 text-gray-700"}
+                    focus:outline-none w-full
+                  `}
+                  onClick={() => toggleMenu(opt.name)}
+                >
+                  <div
+                    className={`
+                      flex items-center justify-center w-6 h-6 rounded-md
+                      ${active ? GREEN_TEXT : "text-gray-700"}
+                    `}
+                  >
+                    <opt.icon size={20} />
+                  </div>
+                  <span
+                    className={`
+                      ml-3 flex-1 transition-opacity duration-300 whitespace-nowrap text-sm
+                      ${isExpanded ? "opacity-100" : "opacity-0"}
+                    `}
+                  >
+                    {opt.name}
+                  </span>
+                  {isExpanded && (
+                    openMenus.includes(opt.name) ? (
+                      <ChevronDown size={16} />
+                    ) : (
+                      <ChevronRight size={16} />
+                    )
+                  )}
+                </div>
+                {/* Children */}
+                {openMenus.includes(opt.name) && isExpanded && (
+                  <div className="pl-9 pr-2 py-1 space-y-1">
+                    {opt.children.map((child: any) => (
+                      <Link
+                        key={child.name}
+                        href={child.href}
+                        className={`
+                          flex items-center py-2 px-3 rounded-md text-sm transition-colors duration-200
+                          ${isActive(child.href)
+                            ? "bg-green-600/30 text-green-800 font-medium"
+                            : "text-gray-700 hover:bg-green-100/40"}
+                          focus:outline-none w-full
+                        `}
+                      >
+                        <div
+                          className={`
+                            flex items-center justify-center w-5 h-5 rounded-md
+                            ${isActive(child.href) ? GREEN_TEXT : "text-gray-700"}
+                          `}
+                        >
+                          <child.icon size={17} />
+                        </div>
+                        <span
+                          className={`
+                            ml-2 transition-opacity duration-300 whitespace-nowrap
+                            ${isExpanded ? "opacity-100" : "opacity-0"}
+                          `}
+                        >
+                          {child.name}
+                        </span>
+                      </Link>
+                    ))}
+                  </div>
+                )}
+              </div>
+            );
+          }
+          // Single-level item
           const active = isActive(opt.href);
           return (
             <div key={opt.name} className="w-full px-2 mb-1">
               <Link
-                href={opt.href}
+                href={opt.href ?? "#"}
                 className={`
                   flex items-center py-2.5 px-3 rounded-md transition-colors duration-200
                   ${
@@ -125,7 +245,7 @@ export function LeftSidebar({ userId }: { userId?: string }) {
                     ${active ? GREEN_TEXT : "text-gray-700"}
                   `}
                 >
-                  <Icon size={20} />
+                  <opt.icon size={20} />
                 </div>
                 <span
                   className={`

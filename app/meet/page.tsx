@@ -179,7 +179,7 @@ export default function MeetPage() {
       <Navbar />
       <main className="flex-1">
         <div className="container mx-auto px-4 py-10">
-          <div className="max-w-4xl mx-auto">
+          <div className="ml-35 max-w-7xl mx-auto">
             <h1 className="text-3xl md:text-4xl font-bold text-center mb-2">
               LegalEase Virtual Meetings
             </h1>
@@ -334,32 +334,32 @@ export default function MeetPage() {
                 Install the LegalEase Meet Assistant Chrome extension to
                 automatically capture and analyze your Google Meet conversations.
               </p>
-
-              <div className="max-w-4xl mx-auto">
-                <TranscriptAnalyzerCombined />
-              </div>
-
-              <div className="mt-6 p-4 bg-muted rounded-md">
-                <h3 className="font-medium mb-2">
-                  How to use the Meet Assistant
-                </h3>
-                <ol className="list-decimal pl-5 space-y-2 text-sm text-muted-foreground">
-                  <li>
-                    Install the LegalEase Chrome extension from the provided ZIP
-                    file or Chrome Web Store
-                  </li>
-                  <li>Start or join a Google Meet call</li>
-                  <li>
-                    Click the LegalEase icon in your browser to activate the
-                    extension
-                  </li>
-                  <li>Allow microphone access when prompted</li>
-                  <li>Start recording to see the transcript in real-time</li>
-                  <li>
-                    Use the "Analyze with Gemini" button to get AI-powered legal
-                    insights
-                  </li>
-                </ol>
+              <div className="flex flex-col md:flex-row gap-6 max-w-7xl mx-auto">
+                <div className="flex-1">
+                  <TranscriptAnalyzerCombined />
+                </div>
+                <div className="md:w-96 w-full mt-6 md:mt-0 p-4 bg-muted rounded-md self-start h-auto">
+                  <h3 className="font-semibold mb-2">
+                    How to use the Meet Assistant
+                  </h3>
+                  <ol className="list-decimal pl-5 space-y-2 text-sm text-muted-foreground">
+                    <li>
+                      Install the LegalEase Chrome extension from the provided ZIP
+                      file or Chrome Web Store
+                    </li>
+                    <li>Start or join a Google Meet call</li>
+                    <li>
+                      Click the LegalEase icon in your browser to activate the
+                      extension
+                    </li>
+                    <li>Allow microphone access when prompted</li>
+                    <li>Start recording to see the transcript in real-time</li>
+                    <li>
+                      Use the "Analyze with Gemini" button to get AI-powered legal
+                      insights
+                    </li>
+                  </ol>
+                </div>
               </div>
             </div>
           </div>

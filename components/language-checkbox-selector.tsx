@@ -62,12 +62,12 @@ export function LanguageCheckboxSelector({
               Choose your preferred language for AI responses and voice features
             </p>
           </div>
-          <ScrollArea className="max-h-72">
+          <ScrollArea className="h-60 overflow-y-hidden hover:overflow-y-auto">
             <div className="p-2">
               {SUPPORTED_LANGUAGES.map((language) => (
                 <div
                   key={language.code}
-                  className="flex items-center space-x-3 p-2 rounded-md hover:bg-accent cursor-pointer"
+                  className="flex items-center space-x-3 p-2 rounded-md hover:bg-gray-100 cursor-pointer"
                   onClick={() => handleLanguageSelect(language)}
                 >
                   <Checkbox
@@ -126,14 +126,14 @@ export function LanguageCheckboxSelector({
         and AI responses.
       </p>
 
-      <div className="grid grid-cols-1 gap-2 max-h-64 overflow-y-auto border rounded-lg p-3">
+      <div className="grid grid-cols-1 gap-2 max-h-39 overflow-y-auto border rounded-lg p-3">
         {SUPPORTED_LANGUAGES.map((language) => (
           <div
             key={language.code}
             className={`flex items-center space-x-3 p-3 rounded-md border transition-colors cursor-pointer ${
               selectedLanguage.code === language.code
                 ? "bg-primary/5 border-primary/20"
-                : "hover:bg-accent border-transparent"
+                : "hover:bg-gray-100 border-transparent"
             }`}
             onClick={() => handleLanguageSelect(language)}
           >
@@ -144,10 +144,10 @@ export function LanguageCheckboxSelector({
               className="data-[state=checked]:bg-primary data-[state=checked]:border-primary"
             />
             <div className="flex items-center gap-3 flex-1">
-              <span className="text-2xl">{language.flag}</span>
+              <span className="text-base">{language.flag}</span>
               <div className="flex flex-col">
-                <span className="font-medium">{language.nativeName}</span>
-                <span className="text-sm text-muted-foreground">
+                <span className="font-medium text-sm">{language.nativeName}</span>
+                <span className="text-xs text-muted-foreground">
                   {language.name}
                 </span>
                 <div className="flex items-center gap-2 mt-1">
