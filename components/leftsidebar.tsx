@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import {
   Upload,
   MessageCircle,
@@ -85,9 +86,26 @@ export function LeftSidebar({ userId }: { userId?: string }) {
   const [isExpanded, setIsExpanded] = useState(false);
   const [openMenus, setOpenMenus] = useState<string[]>([]);
   const pathname = usePathname();
+  const router = useRouter();
 
   // Firebase user state
   const [user, setUser] = useState<FirebaseUser | null>(null);
+
+  // Prefetch all routes on mount
+  useEffect(() => {
+    sidebarOptions.forEach((opt) => {
+      // Prefetch main route if it exists
+      if (opt.href) {
+        router.prefetch(opt.href);
+      }
+      // Prefetch child routes if they exist
+      if (opt.hasChildren && opt.children) {
+        opt.children.forEach((child: any) => {
+          router.prefetch(child.href);
+        });
+      }
+    });
+  }, [router]);
 
   useEffect(() => {
     const auth = getAuth(firebaseApp);
@@ -98,7 +116,8 @@ export function LeftSidebar({ userId }: { userId?: string }) {
   }, []);
 
   // Check if a menu item is active
-  const isActive = (href: string) => {
+  const isActive = (href: string | undefined) => {
+    if (!href) return false;
     return (
       pathname === href ||
       (href === "/dashboard#history" && pathname === "/dashboard")
@@ -229,6 +248,7 @@ export function LeftSidebar({ userId }: { userId?: string }) {
             <div key={opt.name} className="w-full px-2 mb-1">
               <Link
                 href={opt.href ?? "#"}
+                prefetch={true}
                 className={`
                   flex items-center py-2.5 px-3 rounded-md transition-colors duration-200
                   ${
