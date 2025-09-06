@@ -5,7 +5,7 @@ import "./globals.css";
 import AuthGuard from "@/components/AuthGuard";
 import { ThemeProvider } from "@/components/theme-provider";
 import { LanguageProvider } from "@/contexts/LanguageContext";
-import { WithSidebar } from "@/components/leftsidebar";
+import { LayoutWrapper } from "@/components/layout-wrapper";
 import { Toaster } from "@/components/ui/toaster";
 
 const inter = Inter({
@@ -35,12 +35,13 @@ export default function RootLayout({
     <html
       lang="en"
       className={`${inter.variable} ${roboto.variable} antialiased`}
+      suppressHydrationWarning={true}
     >
       <body className="font-sans">
         <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
           <LanguageProvider>
             <AuthGuard>
-              <WithSidebar>{children}</WithSidebar>
+              <LayoutWrapper>{children}</LayoutWrapper>
             </AuthGuard>
             <Toaster />
           </LanguageProvider>

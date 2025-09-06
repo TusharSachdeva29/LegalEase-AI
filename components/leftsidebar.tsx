@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import {
   Upload,
   MessageCircle,
@@ -68,9 +69,17 @@ const sidebarOptions = [
 export function LeftSidebar({ userId }: { userId?: string }) {
   const [isExpanded, setIsExpanded] = useState(false);
   const pathname = usePathname();
+  const router = useRouter();
 
   // Firebase user state
   const [user, setUser] = useState<FirebaseUser | null>(null);
+
+  // Prefetch all routes on mount
+  useEffect(() => {
+    sidebarOptions.forEach((opt) => {
+      router.prefetch(opt.href);
+    });
+  }, [router]);
 
   useEffect(() => {
     const auth = getAuth(firebaseApp);
@@ -109,6 +118,7 @@ export function LeftSidebar({ userId }: { userId?: string }) {
             <div key={opt.name} className="w-full px-2 mb-1">
               <Link
                 href={opt.href}
+                prefetch={true}
                 className={`
                   flex items-center py-2.5 px-3 rounded-md transition-colors duration-200
                   ${
