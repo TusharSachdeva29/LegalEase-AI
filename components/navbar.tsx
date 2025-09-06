@@ -42,6 +42,8 @@ export function Navbar() {
     const auth = getAuth(firebaseApp);
     try {
       await signOut(auth);
+      // Force reload or redirect to update UI after sign out
+      window.location.reload();
     } catch (err) {
       // Optionally handle error
     }
@@ -52,7 +54,7 @@ export function Navbar() {
   return (
     <nav className="sticky top-0 z-50 bg-background/80 backdrop-blur-lg supports-[backdrop-filter]:bg-background/60 border-b border-white/10">
       <div className="absolute inset-0 bg-gradient-to-r from-primary/[0.07] via-accent/[0.07] to-primary/[0.07]"></div>
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative">
+      <div className="max-w-screen px-4 sm:px-6 lg:px-8 relative">
         <div className="flex justify-between items-center h-20">
           {/* Logo */}
           <div className="flex-shrink-0 group">
@@ -63,12 +65,12 @@ export function Navbar() {
                   LegalEase AI
                 </h1>
               </div>
-              <Badge
+              {/* <Badge
                 variant="secondary"
                 className="text-xs font-medium px-2 py-0.5 bg-primary/10 text-primary border-primary/20 hover:bg-primary/20 transition-colors"
               >
                 Beta
-              </Badge>
+              </Badge> */}
             </Link>
           </div>
 
@@ -78,7 +80,7 @@ export function Navbar() {
           <div className="hidden md:flex items-center space-x-6">
             {user ? (
               <>
-                <Link href="/meet">
+                {/* <Link href="/meet">
                   <Button
                     variant="outline"
                     className="flex items-center space-x-2 border-2 border-green-500/20 hover:border-green-500/40 hover:bg-green-500/5 text-green-700 hover:text-green-800 transition-all duration-300"
@@ -94,7 +96,7 @@ export function Navbar() {
                   >
                     <span>History</span>
                   </Button>
-                </Link>
+                </Link> */}
                 <div className="flex items-center space-x-3 group">
                   <div className="relative">
                     <div className="absolute -inset-1 bg-gradient-to-r from-primary/20 to-accent/20 rounded-full blur opacity-0 group-hover:opacity-100 transition duration-500"></div>
