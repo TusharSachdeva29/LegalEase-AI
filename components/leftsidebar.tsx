@@ -54,7 +54,7 @@ const sidebarOptions = [
     href: "/meet",
   },
   {
-    name: "Document History",
+    name: "Chat History",
     icon: History,
     href: "/history",
   },
