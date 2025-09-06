@@ -94,7 +94,16 @@ export function LeftSidebar({ userId }: { userId?: string }) {
   // Prefetch all routes on mount
   useEffect(() => {
     sidebarOptions.forEach((opt) => {
-      router.prefetch(opt.href);
+      // Prefetch main route if it exists
+      if (opt.href) {
+        router.prefetch(opt.href);
+      }
+      // Prefetch child routes if they exist
+      if (opt.hasChildren && opt.children) {
+        opt.children.forEach((child: any) => {
+          router.prefetch(child.href);
+        });
+      }
     });
   }, [router]);
 
@@ -107,7 +116,8 @@ export function LeftSidebar({ userId }: { userId?: string }) {
   }, []);
 
   // Check if a menu item is active
-  const isActive = (href: string) => {
+  const isActive = (href: string | undefined) => {
+    if (!href) return false;
     return (
       pathname === href ||
       (href === "/dashboard#history" && pathname === "/dashboard")
