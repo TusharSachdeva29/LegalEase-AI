@@ -16,6 +16,20 @@ export function AiInsights({ selectedClause, documentText }: AiInsightsProps) {
   const [isLoading, setIsLoading] = useState(false);
 
   useEffect(() => {
+    // First, try to hydrate from stored analysis to avoid re-analyzing
+    if (!analysis && typeof window !== "undefined") {
+      const storedAnalysis = sessionStorage.getItem("documentAnalysis");
+      if (storedAnalysis) {
+        try {
+          const parsed = JSON.parse(storedAnalysis);
+          setAnalysis(parsed);
+          return; // skip fresh analysis
+        } catch (e) {
+          console.error("Failed to parse stored analysis:", e);
+        }
+      }
+    }
+
     if (documentText && !analysis) {
       analyzeDocumentWithGemini();
     }

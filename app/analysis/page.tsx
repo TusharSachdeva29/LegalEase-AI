@@ -1,6 +1,9 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { useSearchParams } from "next/navigation";
+import { getAuth, onAuthStateChanged, User } from "firebase/auth";
+import firebaseApp from "@/lib/firebase";
 import { Navbar } from "@/components/navbar";
 import { Footer } from "@/components/footer";
 import { DocumentViewer } from "@/components/document-viewer";
@@ -20,34 +23,147 @@ export default function AnalysisPage() {
   const [documentName, setDocumentName] = useState<string>("Legal Document");
   const [analysis, setAnalysis] = useState<DocumentAnalysis | null>(null);
   const [selectedFilter, setSelectedFilter] = useState<string>("all");
+  const [user, setUser] = useState<User | null>(null);
+  const [isReady, setIsReady] = useState<boolean>(false);
+  const searchParams = useSearchParams();
 
   useEffect(() => {
-    // Get document data from sessionStorage
-    const storedText = sessionStorage.getItem("documentText");
-    const storedName = sessionStorage.getItem("documentName");
-
-    if (storedText) {
-      setDocumentText(storedText);
-    }
-    if (storedName) {
-      setDocumentName(storedName);
-    }
-
-    // Get analysis data from sessionStorage if available
-    const storedAnalysis = sessionStorage.getItem("documentAnalysis");
-    if (storedAnalysis) {
-      try {
-        setAnalysis(JSON.parse(storedAnalysis));
-      } catch (error) {
-        console.error("Error parsing stored analysis:", error);
-      }
-    }
-
-    // If no document is found, redirect to upload
-    if (!storedText) {
-      window.location.href = "/upload";
-    }
+    const auth = getAuth(firebaseApp);
+    const unsub = onAuthStateChanged(auth, (u) => setUser(u));
+    return () => unsub();
   }, []);
+
+  // Load by docId if present; otherwise fall back to sessionStorage
+  useEffect(() => {
+    const init = () => {
+      const docId = searchParams?.get("docId");
+      const uid = user?.uid;
+
+      if (docId && uid && typeof window !== "undefined") {
+        const storedDoc = localStorage.getItem(`document_${uid}_${docId}`);
+        if (storedDoc) {
+          try {
+            const parsed = JSON.parse(storedDoc);
+            setDocumentText(parsed.text || "");
+            setDocumentName(parsed.name || "Legal Document");
+            setAnalysis(parsed.analysis || null);
+            sessionStorage.setItem("documentText", parsed.text || "");
+            sessionStorage.setItem("documentName", parsed.name || "Legal Document");
+            sessionStorage.setItem(
+              "documentAnalysis",
+              JSON.stringify(parsed.analysis || null)
+            );
+            sessionStorage.setItem("currentDocumentId", docId);
+
+            // If there is an associated chat, prepare continuation
+            let chatId = localStorage.getItem(`documentChat_${uid}_${docId}`);
+            // Fallback: search local chatHistory for a chat with this documentId
+            if (!chatId) {
+              try {
+                const chatsRaw = localStorage.getItem("chatHistory");
+                if (chatsRaw) {
+                  const chats = JSON.parse(chatsRaw);
+                  const match = chats.find((c: any) => c?.metadata?.documentId === docId);
+                  if (match) chatId = match.id;
+                }
+              } catch (e) {
+                console.error("Failed to search chatHistory for document chat:", e);
+              }
+            }
+            if (chatId) {
+              const continuePayload = {
+                id: chatId,
+                title: parsed.name || "Document Chat",
+                type: "document",
+                preview: "",
+                timestamp: new Date().toISOString(),
+                messageCount: 0,
+                lastMessage: "",
+                metadata: { documentName: parsed.name },
+              };
+              sessionStorage.setItem(
+                "continueChat",
+                JSON.stringify(continuePayload)
+              );
+            }
+          } catch (e) {
+            console.error("Failed to parse stored document:", e);
+          }
+        }
+        setIsReady(true);
+        return;
+      }
+
+      // Fallback to session storage data (new upload flow)
+      const storedText = sessionStorage.getItem("documentText");
+      const storedName = sessionStorage.getItem("documentName");
+      if (storedText) setDocumentText(storedText);
+      if (storedName) setDocumentName(storedName);
+      // Always create a new document id when no docId param (avoid overwriting previous)
+      const newDocId = `doc_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
+      sessionStorage.setItem("currentDocumentId", newDocId);
+      const storedAnalysis = sessionStorage.getItem("documentAnalysis");
+      if (storedAnalysis) {
+        try {
+          setAnalysis(JSON.parse(storedAnalysis));
+        } catch (error) {
+          console.error("Error parsing stored analysis:", error);
+        }
+      }
+      setIsReady(true);
+    };
+
+    init();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user, searchParams]);
+
+  // Persist analyzed document and update dashboard history
+  useEffect(() => {
+    if (!user || !analysis || !documentName) return;
+    if (typeof window === "undefined") return;
+
+    // Ensure a stable documentId
+    let docId = sessionStorage.getItem("currentDocumentId");
+    if (!docId) {
+      docId = `doc_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
+      sessionStorage.setItem("currentDocumentId", docId);
+    }
+
+    const uid = user.uid;
+    const docKey = `document_${uid}_${docId}`;
+    const record = {
+      id: docId,
+      name: documentName,
+      text: documentText,
+      analysis,
+      createdAt: new Date().toISOString(),
+      status: "analyzed" as const,
+    };
+    try {
+      localStorage.setItem(docKey, JSON.stringify(record));
+    } catch (e) {
+      console.error("Failed to save document record:", e);
+    }
+
+    // Update dashboard history for stats and recent activity
+    try {
+      const historyKey = `documentHistory_${uid}`;
+      const existing = localStorage.getItem(historyKey);
+      let items: any[] = existing ? JSON.parse(existing) : [];
+      const idx = items.findIndex((d) => d.id === docId);
+      const entry = {
+        id: docId,
+        name: documentName,
+        type: "Document",
+        uploadDate: record.createdAt,
+        status: "analyzed",
+      };
+      if (idx >= 0) items[idx] = entry; else items.unshift(entry);
+      localStorage.setItem(historyKey, JSON.stringify(items));
+    } catch (e) {
+      console.error("Failed to update document history:", e);
+    }
+  }, [user, analysis, documentName, documentText]);
 
   // Calculate stats from analysis
   const stats = {
@@ -57,6 +173,18 @@ export default function AnalysisPage() {
       analysis?.clauses?.filter((c) => c.riskLevel === "medium").length || 0,
     low: analysis?.clauses?.filter((c) => c.riskLevel === "low").length || 0,
   };
+
+  if (!isReady) {
+    return (
+      <div className="min-h-screen bg-background">
+        <Navbar />
+        <main className="container mx-auto px-4 py-8">
+          <div className="text-muted-foreground">Loading...</div>
+        </main>
+        <Footer />
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-background">

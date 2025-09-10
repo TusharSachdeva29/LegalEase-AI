@@ -149,6 +149,7 @@ export function ChatInterface({
     messages: Message[];
     timestamp: Date;
     type: "document" | "general";
+    metadata?: any;
   }) => {
     try {
       const existingChats = localStorage.getItem("chatHistory");
@@ -338,6 +339,29 @@ export function ChatInterface({
             setHasDocumentText(true);
           }
         }
+      } else {
+        // Fallback: try to load from localStorage if server chat not found
+        const local = localStorage.getItem("chatHistory");
+        if (local) {
+          const chats = JSON.parse(local);
+          const chat = chats.find((c: any) => c.id === chatId);
+          if (chat) {
+            const deserializedMessages = chat.messages.map((msg: any) => ({
+              ...msg,
+              timestamp: new Date(msg.timestamp),
+            }));
+            setMessages(deserializedMessages);
+            setChatTitle(chat.title);
+            setChatMode(chat.type);
+            if (chat.metadata?.documentName) {
+              const storedText = sessionStorage.getItem("documentText");
+              if (storedText) {
+                setDocumentText(storedText);
+                setHasDocumentText(true);
+              }
+            }
+          }
+        }
       }
     } catch (error) {
       console.error("Error loading chat history:", error);
@@ -411,6 +435,7 @@ export function ChatInterface({
     if (!user || messages.length <= 1) return;
 
     try {
+      const docId = sessionStorage.getItem("currentDocumentId") || undefined;
       const chatData = {
         userId: user.uid,
         title: chatTitle || generateChatTitle(),
@@ -429,6 +454,7 @@ export function ChatInterface({
           documentName:
             documentName || (hasDocumentText ? "Uploaded Document" : undefined),
           analysisType: chatMode,
+          documentId: docId,
         },
       };
 
@@ -456,6 +482,17 @@ export function ChatInterface({
         const result = await response.json();
         if (!currentChatId && result.chatId) {
           setCurrentChatId(result.chatId);
+        }
+        // Link this chat to the current document if in document mode
+        if (chatMode === "document" && docId) {
+          try {
+            localStorage.setItem(
+              `documentChat_${user.uid}_${docId}`,
+              (currentChatId || result.chatId)
+            );
+          } catch (e) {
+            console.error("Failed to link document to chat:", e);
+          }
         }
         setHasUnsavedChanges(false);
         console.log("Chat saved successfully");
@@ -544,13 +581,18 @@ export function ChatInterface({
       const updatedMessages = [...messages, userMessage, aiResponse];
       const chatId = currentChatId || Date.now().toString();
       const chatTitle = generateChatTitle();
+      const docId = sessionStorage.getItem("currentDocumentId") || undefined;
       
       saveChatToLocalStorage({
         id: chatId,
         title: chatTitle,
         messages: updatedMessages,
         timestamp: new Date(),
-        type: chatMode
+        type: chatMode,
+        metadata: {
+          documentName,
+          documentId: docId,
+        }
       });
       
       if (!currentChatId) {
