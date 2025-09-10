@@ -55,6 +55,8 @@ export default function DashboardPage() {
   const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
   const [loading, setLoading] = useState(true);
   const [documentHistory, setDocumentHistory] = useState<DocumentHistory[]>([]);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [viewAll, setViewAll] = useState(false);
   const router = useRouter();
 
   useEffect(() => {
@@ -213,11 +215,18 @@ export default function DashboardPage() {
                     </div>
                     <CardTitle className="text-xl font-semibold bg-clip-text text-transparent bg-gradient-to-r from-primary to-primary/80">Recent Activity</CardTitle>
                   </div>
-                  {documentHistory.length > 3 && (
-                    <Button variant="ghost" size="sm" className="hover:text-primary transition-colors">
-                      View All
-                    </Button>
-                  )}
+                  <div className="flex items-center gap-2">
+                    {documentHistory.length > 5 && !viewAll && (
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="hover:text-primary transition-colors"
+                        onClick={() => setViewAll(true)}
+                      >
+                        View All
+                      </Button>
+                    )}
+                  </div>
                 </div>
               </CardHeader>
               <CardContent>
@@ -240,10 +249,18 @@ export default function DashboardPage() {
                   </div>
                 ) : (
                   <div className="space-y-4">
-                    {documentHistory.slice(0, 3).map((doc) => (
+                    {/* Paginated list: show 5 per page unless View All is active */}
+                    {(viewAll
+                      ? documentHistory
+                      : documentHistory.slice((currentPage - 1) * 5, currentPage * 5)
+                    ).map((doc) => (
                       <div
                         key={doc.id}
                         className="flex items-center justify-between p-4 bg-gradient-to-r from-white/5 to-transparent hover:from-white/10 border border-primary/10 rounded-lg transition-all duration-300 group cursor-pointer"
+                        onClick={() => {
+                          // Navigate to analysis page with docId
+                          window.location.href = `/analysis?docId=${doc.id}`;
+                        }}
                       >
                         <div className="flex items-center space-x-4">
                           <div
@@ -281,6 +298,34 @@ export default function DashboardPage() {
                         </Badge>
                       </div>
                     ))}
+                    {/* Pagination controls (hidden when View All is active) */}
+                    {documentHistory.length > 5 && !viewAll && (
+                      <div className="flex items-center justify-between pt-2">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+                          disabled={currentPage === 1}
+                        >
+                          Previous
+                        </Button>
+                        <span className="text-sm text-muted-foreground">
+                          Page {currentPage} of {Math.ceil(documentHistory.length / 5)}
+                        </span>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() =>
+                            setCurrentPage((p) =>
+                              Math.min(Math.ceil(documentHistory.length / 5), p + 1)
+                            )
+                          }
+                          disabled={currentPage >= Math.ceil(documentHistory.length / 5)}
+                        >
+                          Next
+                        </Button>
+                      </div>
+                    )}
                   </div>
                 )}
               </CardContent>
