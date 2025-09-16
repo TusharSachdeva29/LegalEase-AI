@@ -66,7 +66,7 @@ const sidebarOptions = [
   //   href: "/clauses",
   // },
   {
-    name: "Start Meeting",
+    name: "Meeting",
     icon: Video,
     href: "/meet",
   },
