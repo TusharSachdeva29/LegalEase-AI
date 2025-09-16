@@ -5,10 +5,14 @@ async function testGeminiConnection() {
   try {
     console.log("Testing Gemini API connection...");
 
-    const apiKey =
-      process.env.NEXT_PUBLIC_GEMINI_API_KEY || "AIzaSyDDcrJS_3scPT8mskcCtLMhxVL3Yb5vV-M";
+    const apiKey = process.env.NEXT_PUBLIC_GEMINI_API_KEY;
     console.log("API Key exists:", !!apiKey);
-    console.log("API Key format:", apiKey.substring(0, 10) + "...");
+    if (apiKey) {
+      console.log("API Key format:", apiKey.substring(0, 10) + "...");
+    } else {
+      console.log("API Key format: undefined");
+      throw new Error("Gemini API key is not defined in environment variables.");
+    }
 
     const genAI = new GoogleGenerativeAI(apiKey);
     const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
